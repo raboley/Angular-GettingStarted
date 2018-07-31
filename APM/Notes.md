@@ -109,14 +109,14 @@ This usually goes right before the class in the code file. The component is a fu
 
 ### Importing what we need
 
-Import statements are part of ES 2015 and is similar to C# Using statement. Other Modules can import our components as long as they are exported. Angular is also built using modules. When we need methods or properties from angular we also can import those modules from one of the Angular modules below.
+Import statements are part of ES 2015 and is similar to C# `Using` statement. Other Modules can import our components as long as they are exported. Angular is also built using modules. When we need methods or properties from angular we also can import those modules from one of the Angular modules below.
 
 * @angular/core
 * @angular/animate
 * @angular/http
 * @angular/router
 
-Every class should import the member Component so it can create the `@component` decorator.  
+Every Component class should import the member Component so it can create the `@component` decorator.  
 
 ```typescript
 import { component } from '@angular/core';
@@ -124,7 +124,7 @@ import { component } from '@angular/core';
 
 ## Demo: Creating the App Component
 
-The below code can be written from scratch in the `app.component.ts` to 
+The below code can be written from scratch in the `app.component.ts` to create a new component.
 
 ```typescript
 import { Component } from "@angular/core";
@@ -141,6 +141,14 @@ export class AppComponent {
   pageTitle: string = 'Acme Product Management';
 }
 ```
+
+This component will add a header1 style title that displays whatever the `pageTitle` property of our `AppComponent` class is, and then have the unstyled text 'My First Component' added after that. The selector for this is `pm-root` so any html that adds the `pm-root` directive like so:
+
+```html
+<pm-root></pm-root>
+```
+
+will load up this component and add the title and body text declared in our template html.
 
 ## Bootstrapping our app component
 
@@ -193,7 +201,7 @@ f12 in the browswer to open developer tools. You can find your code under the so
 
 ![Browser-Dev-Tools-Sources](./Documentation/Images/Browser-Dev-Tools-Sources.png)
 
-Check your code for:
+you can also add breakpoints in your code on this page. Things to look for when troubleshooting broken code are:
 
 * Unclosed tags/braces
 * Proper casing
@@ -218,7 +226,7 @@ Next is taking a closer look at templates, and creating the product list compone
 
 # Templates, Interpolation, and Directives
 
-Web apps are all about the user interface, and angular makes this easy to do. Now we will focus on techniques to build out the template. 
+Web apps are all about the user interface, and angular makes this easy to do. Now we will focus on techniques to build out the template.
 
 ## Overview
 
@@ -256,9 +264,9 @@ This file is a global style sheet, so these styles are now available to any temp
 
 ### Adding the template HTML file
 
-By convention all angular modules should have their own folder under the app folder. Since this is the Products module create a products folder resulting in this path `./src/app/products`
+By convention all angular components should have their own folder under the app folder. Since this is the Products component create a products folder resulting in this path `./src/app/products`
 
-Then create the `product-list.component.html` file. The convention for this is to have it be the same name as the component with a .html extension. 
+Then create the `product-list.component.html` file. The convention for this is to have it be the same name as the component with a .html extension.
 
 ```html
 <div class='card'>
@@ -399,7 +407,9 @@ First add the directive to the template of our [app.component.ts](./src/app/app.
 
 This tells our app where our component should show up. This custom HTML tag we added is called a `directive` and is how html implements angular components.
 
-If we run the app with just that added it will not load anything, but we will get a very good error in the developer tools console of the browser. The problem is the directive we added isn't know by our [app.module.ts](./src/app/app.module.ts). The error is very nice in that it will give a solution to the problem, which would be to add the component that contains 'pm-products' to the app module. So let's do just that. In our [app.module.ts](./src/app/app.module.ts) file add `ProductListComponent` to our the declarations decorator and then import the `ProductListComponent` from our file.
+If we run our app now it won't work, but it will provide a helpful error in the console. The problem is the directive we added isn't know by our [app.module.ts](./src/app/app.module.ts). The error also gives a solution to the problem, which would be to add the component 'pm-products' to the app module. So let's do just that.
+
+In our [app.module.ts](./src/app/app.module.ts) file add `ProductListComponent` to our the declarations decorator and then import the `ProductListComponent` from our file.
 
 ```typescript
 import { BrowserModule } from '@angular/platform-browser';
@@ -427,3 +437,389 @@ Now the page should show up. It won't do anything, but it is all there.
 Next step is to add some functionality to our app with data binding and some built in directives.
 
 ## Binding with Interpolation
+
+Binding coordinates communication between a component's class and its template, which often involves passing in data.
+
+the class can pass data to the template, and in reverse the template can raise events that trigger the class methods or pass in user ented values to the properties. Binding syntax is defined in the template.
+
+### Interpolation
+
+interpolation is a one way class binding from the class to the template. We use interpolation to call the strings between double curley braces. Some examples of template interpolation are:
+
+Class file
+
+```typescript
+export class AppComponent {
+  pageTitle: string = 'Acme Product Management';
+  
+  getTitle(): string {...};
+}
+```
+
+Template file
+
+```html
+<h1>{{pageTitle}}</h1>
+
+{{'Title' + pageTitle}}
+
+{{2*20+1}}
+
+{{'Title: ' + getTitle()}}
+
+<h1 innerText={{pageTitle}}></h1>
+```
+
+The template Expression is what is between the two curley braces. Angular executes the code between the two, then converts them to a string and returns them on the page as a read only.
+
+Lets change the hard coding of the page title in our `product-list` component.
+
+This is done by changing the [product-list.component.html](./src/app/products/product-list.component.html)
+
+From 
+
+```html
+        <div class='card-header'>
+            Product List
+        </div>
+```
+
+to
+
+```html
+        <div class='card-header'>
+            {{pageTitle}}
+        </div>
+```
+
+## Adding Logic with Directivies: nglf
+
+Angular has built in directives. We will use structural directives in this section
+
+* `ngIf`: If logic
+* `ngFor`: For loops
+
+`ngIf` is a structural directive that removes or shows elements from the dom. If the condition is true it is inserted, if it is false then it is removed.
+
+```html
+<div class='table-responsive'>
+    <table class='table' *ngIf='products && products.length'>
+        <thead> ...
+        </thead>
+        <tbody> ...
+        </tbody>
+    </table>
+</div>
+```
+
+This example shows how we could show or hide the products table. If there are no products and data in the products class it will not show the table. All elements in that table class will be removed from the DOM. If there are products and product data in the class then it is inserted into the DOM and will be displayed.
+
+Since these directives are not native to HTML we still need to load them so our HTML can find them. Luckily the Browser module gives us the `*ngIf` and `*ngFor` directives, and since that is imported into the app module already then all our templates within that module have access to these commands.
+
+### Show/hide the table
+
+To start we need to have a **property** to hold the items for our table in our [product-list.component.ts](./src/app/products/product-list.component.ts)
+
+```typescript
+import { Component } from "@angular/core";
+
+@Component({
+    selector: 'pm-products',
+    templateUrl: './product-list.component.html'
+})
+
+export class ProductListComponent {
+    pageTitle: string = 'Product List';
+    products: any[] = [
+        {
+            "productId": 1,
+            "productName": "Leaf Rake",
+            "productCode": "GDN-0011",
+            "releaseDate": "March 19, 2016",
+            "description": "Leaf rake with 48-inch wooden handle.",
+            "price": 19.95,
+            "starRating": 3.2,
+            "imageUrl": "https://openclipart.org/image/300px/svg_to_png/26215/Anonymous_Leaf_Rake.png"
+          },
+          {
+            "productId": 2,
+            "productName": "Garden Cart",
+            "productCode": "GDN-0023",
+            "releaseDate": "March 18, 2016",
+            "description": "15 gallon capacity rolling garden cart",
+            "price": 32.99,
+            "starRating": 4.2,
+            "imageUrl": "https://openclipart.org/image/300px/svg_to_png/58471/garden_cart.png"
+          }
+    ];
+}
+```
+
+The property added is called `products` which we are going to give the type of array that holds objects of type `any`. We will use a better type later, but for now the type of `any` is used in cases when we don't know what type the objects are going to be, or we don't care what they will be. Then we will hard code two products in our array. This will be handled by a service later, but for now we will use this hardcoding.
+
+Next is to update the **template** to use `*ngIf` so that our table only appears if there are items in it. This is done in the [product-list.component.html](./src/app/products/product-list.component.html) file. We add the if statement to the `<table>` tag
+
+```html
+<div class='card'>
+        <div class='card-header'>
+            {{pageTitle}}
+        </div>
+        <div class='card-body'>
+            <div class='row'>
+                <div class='col-md-2'>Filter By:</div>
+                <div class='col-md-4'>
+                    <input type='text' />
+                </div>
+            </div>
+            <div  class='row'>
+                <div class='col-md-6'>
+                    <h4>Filtered by: </h4>
+                </div>
+            </div>
+            <div class='table-responsive'>
+                <table class='table'
+                            *ngIf='products && products.length' >
+                    <thead>
+                        <tr>
+                            <th>
+                                <button class='btn btn-primary'>
+                                    Show Image
+                                </button>
+                            </th>
+                            <th>Product</th>
+                            <th>Code</th>
+                            <th>Avialable</th>
+                            <th>Price</th>
+                            <th>5 Star Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+```
+
+This checks to see if there is products property, and makes sure that there are some items in the proudcts array. If you refresh the web app nothing should have changed, but if you then comment out the products we hard coded in the `products` property, then the table should disapear. Once we add it again it should re-appear.
+
+Next we need to populate our table with the products using `*ngFor`.
+
+## Adding Logic with Directives: *ngFor
+
+`*ngFor` is a for loop that repeats whatever we define for however many items are in a list. This can be used to create a whole table of rows by defining just what one row should look like.
+
+```html
+<tr *ngFor='let product of products'>
+    <td></td>
+    <td>{{ product.productName }}</td>
+    <td>{{ product.productCode }}</td>
+    <td>{{ product.releaseDate }}</td>
+    <td>{{ product.price }}</td>
+    <td>{{ product.starRating }}</td>
+</tr>
+```
+
+`products` is an array from our [product-list.component.ts](./src/app/products/product-list.component.ts). The array of products is what we will be iterating through in the table data elements below. `let` creates a template input variable call product. It can be referenced anywhere on the element, or sibling or child element in the html. `product` is the name of the variable we create as the `*ngFor` loop iterates through our `products`.
+
+Then in all the table data rows we use interpolation to one way bind to the properties of our products array property. each attribute in the array can be accessed with dot notation referenced by the name in the json.
+
+we will add this code to our [product-list.component.html](./src/app/products/product-list.component.html) file inbetween the open and closing tags of the `<tbody></tbody>` elements.
+
+```html
+                    </thead>
+                    <tbody>
+                        <tr *ngFor='let product of products'>
+                            <td></td>
+                            <td>{{ product.productName }}</td>
+                            <td>{{ product.productCode }}</td>
+                            <td>{{ product.releaseDate }}</td>
+                            <td>{{ product.price }}</td>
+                            <td>{{ product.starRating }}</td>
+                        </tr>
+                    </tbody>
+```
+
+After doing that it should show up in our app displaying all the products we have hard coded so far. Since we used the `*ngFor` loop we only had to define what a row should look like once, but we used the `of` keyword instead of the `in` keyword. For of loop iterates through an array returning each object and properties, while an `in` loop iterates through the objects index. This is best remembered by thinking of `in` does index.
+
+## Checklists and Summary
+
+### Inline templates
+
+* for short templates
+* specify `template` property in decorator
+* use ES 2015 back ticks for multiple lines
+* watch out for syntax or spelling issues
+
+### Linked Template
+
+* for longer templates
+* specify the `templateUrl` property in decorator
+* define path to external html file
+
+### Component as a directive
+
+1. declare the component as a directive (ex: `<pm-products></pm-products>`)
+1. declare the component in the app module
+
+### Interpolation
+
+One way binding
+
+* From component class property to an element property in our html
+
+Defined with double curley braces
+
+* Contains a template expression (ex. {{ 1 + 1}}, {{ product.productName }})
+* No quotes needed
+
+### Structural Directives
+
+*ngIf and *ngFor
+
+* Prefix with an asterisk
+* Assign to a quoted string expression
+
+*ngIf
+
+* Expression is evaluated as true or false
+* Can be used to show or hide elements from the DOM in HTML
+
+*ngFor
+
+* define local variable with let
+* use of instead of in (ex. *ngFor='let product of products')
+
+Next lets look at more interactive data bindings
+
+# Data Binding & Pipes
+
+We want to bind DOM elements to the component properties. This allows us to change fonts or styling based on user input, bind to database objects, or react to use inputs/actions. respond with click of a button to hide or show buttons.
+
+## Property Binding
+
+One way binding from the source to the target element.
+
+```html
+<img [src]='product.imageUrl'>
+```
+
+The Binding target is enclosed in `[ ]` while the binding source is enclosed in `''`. In this example we are binding the product.imageUrl to the `src` property of the img element (meaning where the browswer should be looking for our image). We will use property binding to bind the source of the product image.
+
+in our [product-list.component.html](./src/app/products/product-list.component.html) file add an image tag beween the two table data tags and property bind the src and title properties of the image tag to the imageUrl and productName properties of our product class.
+
+```html
+....
+                    <tbody>
+                        <tr *ngFor='let product of products'>
+                            <td>
+                                <img [src]='product.imageUrl'
+                                    [title]='product.productName'>
+                            </td>
+                            <td>{{ product.productName }}</td>
+....
+```
+
+This should show some images, but they are super big. If you hover over the images you should also see the title if you hover over the images. To fix this sizing lets add some styles to our [product-list.component.ts](./src/app/products/product-list.component.ts) file.
+
+We can add properties for size to our componenet class and then do property binding again to set it for all images in our table.
+
+```typescript
+export class ProductListComponent {
+    pageTitle: string = 'Product List';
+    imageWidth: number = 50;
+    imageMargin: number = 2;
+....
+```
+
+We can then bind to these properties in our image tag back in our [product-list.component.html](./src/app/products/product-list.component.html) file.
+
+```html
+                    <tbody>
+                        <tr *ngFor='let product of products'>
+                            <td>
+                                <img [src]='product.imageUrl'
+                                    [title]='product.productName'
+                                    [style.width.px]='imageWidth'
+                                    [style.margin.px]='imageMargin'>
+                            </td>
+```
+
+Since the `imageWidth` and `imageMargin` properties are not properties of our products array, but properties of our component class itself they aren't referenced by `product.imageWidth` for example. Next to make the show/hide button work with two way binding.
+
+## Handling Events with Event Binding
+
+Event binding listens for an event on an element and triggers a method or something else to happen when it does. The syntax is very similar to property binding, but uses `()` instead.
+
+```html
+<button (click)='toggleImage()'>
+```
+
+The name of the bound or target event is enclosed in `()` and then to the right of the event is the template  statement (often a method in a component). If the defined event occurs, then the template statement code is executed. Mozzilla documentation has a good list of [DOM accepted web events](https://developer.mozilla.org/en-US/docs/Web/Events).
+
+Now lets make the show image button work. First thing is to add some properties and methods to our [product-list.component.ts](./src/app/products/product-list.component.ts).
+
+```typescript
+    showImage: boolean = false;
+...
+    toggleImage(): void {
+        this.showImage = !this.showImage;
+    }
+```
+
+The `showImage` property will hold the value of if the images should be shown or hidden.  Then the `toggleImage` method will set the showImage method to the opposite of what it is now. Since this is a boolean, booleans state can be flipped by adding a ! (commonly reffered to as a bang operator) to the beginning of the statement. The first time the button is pressed it goes through this logic.
+
+1. showImage is `false` by default
+1. toggle button pressed
+1. toggleImage method sets this instance of the component's showImage property equal to the opposite of what it currently is when run
+
+Next thing is to setup the button in the [product-list.component.html](./src/app/products/product-list.component.html) to execute our `toggleImage` method and use `*ngIf` to determine if we need to display or hide the images.
+
+```html
+                    <thead>
+                        <tr>
+                            <th>
+                                <button class='btn btn-primary' (click)='toggleImage()'>
+                                    Show Image
+                                </button>
+.....
+                    <tbody>
+                        <tr *ngFor='let product of products'>
+                            <td>
+                                <img *ngIf='showImage'
+                                    [src]='product.imageUrl'
+                                    [title]='product.productName'
+                                    [style.width.px]='imageWidth'
+                                    [style.margin.px]='imageMargin'>
+                            </td>
+
+```
+
+Using event binding we bind the button `click` event to our new toggleImage method. Since that method is a function with no parameters we put () at the end.
+
+Next we can add a `*ngIf` to the img tag so we can check the showImage property and only show the images if it is true. This should work, but it looks weird since the button text doesn't change.
+
+to fix this we can add binding to the `showImage` property using interpolation and a conditional operator to toggle the text. First add {{ showImage }} to the [product-list.component.html](./src/app/products/product-list.component.html).
+
+```html
+                            <th>
+                                <button class='btn btn-primary' (click)='toggleImage()'>
+                                    {{ showImage  ? 'Hide' : 'Show' }} Image
+                                </button>
+                            </th>
+```
+
+We can then use the conditional operator `?` to change the output depending on what the value of showImage is. The left side of the colon is returned if it is true, and the right side if it is false. So in english it says if showImage is true the say Hide, if showImage is false then say show.
+
+Next it is time for some two way binding to use two-way binding.
+
+## Handling input with Two-way binding
+
+Two way binding takes input from a user and passes it to a class, and can take info from a class and pass it back to a user. this can be referenced with the `ngModel` directive. The syntax in html looks like this:
+
+```html
+<input [(ngModel)]='listFilter'>
+```
+
+The `ngModel` directive needs to be enclosed in parenthesis and square brackets.
