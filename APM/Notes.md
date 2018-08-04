@@ -1340,3 +1340,27 @@ in a template right after the thing we want to transform:
 
 Next we will build nested components.
 
+# Building Nested Components
+
+## Introduction
+
+Like Russian dolls we can nest components inside components, and expose data between components. There are a couple ways we can use a component.
+
+as a directive
+
+as a routing target
+
+What makes a component nestable? Any of our components can be nested if they have a selector in the `@component` decorator. There are a couple things that make a component really nestable.
+
+* if it is a fragment of a larger view
+* if it has a selector in the @componenet decorator
+* optionally if it communicates with its container
+
+Overview
+
+1. build a nested component
+1. use it as a directive
+1. pass data to a nested component using `@input`
+1. raise an event from a nested component using `@output`
+
+We want to replace the rating number, with an object that is a variable amount of stars.
