@@ -152,7 +152,7 @@ will load up this component and add the title and body text declared in our temp
 
 ## Bootstrapping our app component
 
-Now that we have a component, how does angular know to load our code? It looks for the selector in the HTML being loaded, which in this case is the index.html. It then looks in an angular module to try to find where the code is for that custom selector. The next step is to declare the component in an angular module. this happens in the `app.module.ts`
+Now that we have a component, how does angular know to load our code? It looks for the selector in the HTML being loaded, which in this case is the index.html. It then looks in an angular module to try to find where the code is for that custom selector. The next step is to declare the component in an angular module. this happens in the [app.module.ts](./src/app/app.module.ts)
 
 ```typescript
 import { BrowserModule } from '@angular/platform-browser';
@@ -923,4 +923,420 @@ Just adding a pipe character then lowercase will do what we want for product cod
 ## Checklist and Summary
 
 ![Binding-Examples](./documentation/images/Binding-Examples.png)
+
+# More on Components
+
+Styles are encapsulated, pipes transform data better, and lifecycle hooks are used appropriately.
+
+* Strong typing and interfaces
+* Encapsulate styles
+* Lifecycle hooks
+* Custom Pipes
+* Nested Components
+
+## Defining interfaces
+
+Strong typing means that we assign types to properties and variables which makes for fewer errors, and better tooling. When there isn't a type for what we want to use, instead of using any, we can create our own custom type called an interface.
+
+Interface is a `specification` identifying a related set of properties and methods. It tells us what we can expect from any object referenced by this type. A class can adhere to the interface by `implementing` it. Then the interface gets used as a `data type`.
+
+ES5 and ES2015 don't use interfaces, but typescript does so when it is transpiled they get removed. 
+
+```typescript
+export interface IProduct {
+    productId: number;
+    productName: string;
+    productCode: string;
+    releaseDate: Date;
+    price: number;
+    description: string;
+    starRating: number;
+    imageUrl: string;
+    calculateDiscount(percent: number): number;
+}
+```
+
+The interface above has `export` so that we can access it by other classes, `interface` letting typescript know this is an interface, then the `interface name` which commonly starts with I, but not always. The interface then has all the property names and types as well as a blueprint for what a method called calculateDiscount would expect and return.
+
+To use the interface in another class, you import the interface, then use it as a datatype.
+
+```typescript
+import { IProduct } from './product';
+
+export class ProductListComponent {
+    pageTitle: string = 'Product List';
+    showImage: boolean = false;
+    listFilter: string = 'cart';
+
+    products: IProduct[] = [...];
+
+    toggleImage(): void {
+        toggleImage(): void {
+            this.showImage = !this.showImage;
+        }
+    }
+}
+```
+
+In the example above we `import` the `IProduct` interface and then use it as the type for our `products array`. That lets typescript know that our `array` called `products` should be filled with objects of the type `Iproduct`. Lets use this in our code by changing our array of any to type of IProduct.
+
+first create a file [product.ts](./src/app/products/product.ts) to hold our interface.
+
+```typescript
+export interface IProduct {
+    productId: number;
+    productName: string;
+    productCode: string;
+    releaseDate: string;
+    price: number;
+    description: string;
+    starRating: number;
+    imageUrl: string;
+}
+```
+
+Similar to the example interface we will create this interface with no methods since this type is just holding objects with these properties. Next lets change that array to use our IProducts interface instead of the any type in [product-list.component.ts](./src/app/products/product-list.component.ts).
+
+```typescript
+import { Component } from "@angular/core";
+import { IProduct } from "./product";
+
+@Component({
+    selector: 'pm-products',
+    templateUrl: './product-list.component.html'
+})
+
+export class ProductListComponent {
+    pageTitle: string = 'Product List';
+    showImage: boolean = false;
+    imageWidth: number = 50;
+    imageMargin: number = 2;
+    listFilter: string = 'cart';
+    products: IProduct[] = [
+```
+
+Notice the only change is to replace the word `any` with `IProduct`, and then `import IProduct` from our new [product.ts](./src/app/products/product.ts) file. If you change any of the property names in the array of products that we have hard coded, it will give us an error that the property doesn't exist which is pretty cool. Without that strong type we might miss type the property name by accident, which would then lead to a hard to find error.
+
+in our [product.ts](./src/app/products/product.ts) file we could create a class that implements the IProducts interface. This is usually only needed if it provides some bussines function that we want to use throughout our application, such as a calculateDiscount Method in the example. For our sample application we don't need product methods, so we don't need a product class, but we will use the interface. Next we will encapsulate component styles.
+
+## Encapsulating Component Styles
+
+Templates sometimes require unique styles. There are a couple options.
+
+1. use inline styles directly in html, but that is hard to see and change
+1. build external stylesheets and link them in index.html, but reuse is hard
+1. component decorator has properties to encapsulate component styles
+
+this shows up in the component style decorator with two flavors. `styles` will allow an array of inline styles, while `styleUrls` will allow for an array of style files. By seperating out styles by component it won't leak any of the styles to any other components. Lets create an external style sheet for our headers in the product-list component. Start by creating a new .css file called [product-list.component.css](./src/app/products/product-list.component.css). Lets give the headers a nice blue color in this css file.
+
+```css
+thead {
+    color: #337ab7
+}
+```
+
+Now that we have a style it is time to add this style sheet to the [product-list.component.ts](./src/app/products/product-list.component.ts) decorator.
+
+```typescript
+@Component({
+    selector: 'pm-products',
+    templateUrl: './product-list.component.html',
+    styleUrls: ['./product-list.component.css']
+})
+```
+
+Adding the stylesUrls keyword and then passing it an array [] with the first object being our new style sheet will wire it all up correctly. After doing this the headers of our table will have a nice blue font color. Next we will look at lifecycle hooks.
+
+## Using Lifecycle Hooks
+
+components have a lifecycle as angular handles them.
+
+1. Create
+1. Render
+1. Create and Render Children
+1. Process changes (repeated)
+1. Destroy
+
+angular gives us lifecycle hooks which allow us to tap into this process. The three most commonly used lifecycle hooks are:
+
+1. OnInit: perform component initialization, retrieve data
+1. OnChanges: perform action after change to input properties
+1. OnDestroy: perform cleanup
+
+To use a lifecycle hook we implement the interface of the hook, import the module and then add logic to the life cycle hook method. Below is an example of adding the `OnInit` lifecycle hook.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+
+export class ProductListComponent
+                implements OnInit {
+    pageTitle: string = 'Product List';
+    showImage: boolean = false;
+    listFilter: string = 'cart';
+    products: IProduct[] = [...];
+
+    ngOnInit(): void {
+        console.log('In OnInit');
+    }
+}
+```
+
+The OnInit module gets added to the import statement, we add the implements OnInit to our class to implement the interface, then add som additional logic to the ngOnInit() method in our class. We don't technically have to implement the interface since it gets transpiled out, but it is good practice to do so and provides better tooling. Lets add this to our [product-list.component.ts](./src/app/products/product-list.component.ts) file.
+
+We don't need to do anything with OnInit for now, but lets add it since we will use it later.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+
+export class ProductListComponent
+                implements OnInit {
+    pageTitle: string = 'Product List';
+    showImage: boolean = false;
+    listFilter: string = 'cart';
+    products: IProduct[] = [...];
+
+    ngOnInit(): void {
+        console.log('In OnInit');
+    }
+}
+```
+
+adding the above example to our code will correctly implement OnInit. Add the implements keyword followed by OnInit and it should automatically add the import statement for OnInit. It will then show an error that our class doesn't implement OnInit correctly. To fix this add the ngOnInit() function call at the bottom which causes our class to conform to what that interface expects. In the console we will see the console.log method when this lifecycle hook is hit. Next we will create a custom pipe to change data displayed to users.
+
+## Building Custom Pipes
+
+Pipes transform bound properties before displaying them in a view. We used built in pipes in the last module, but this time we want to create a custom one. We will create a custom pipe that transforms a specified character to a space so that our product code will not have a dash in it, but also be general enough to be re-used.
+
+to build a custom pipe it is similar to a component. We import the pipe decorator, then add metadata to our @pipe decorator and then export a class for other parts of our app to use them.
+
+```typescript
+import { Pipe, PipeTransform } from '@angular/core';
+
+@pipe({
+    name: 'convertToSpaces'
+})
+export class ConvertToSpacesPipe
+                implements PipeTransform {
+                    transform(value: string,
+                                    character: string): string {
+
+                                    }
+                }
+```
+
+The example above shows the import, decoration and creation of a custom pipe. The class implements the `PipeTransform` interface which expects the method transform. It takes one paramater called `value` by default, which is the value we are passing in to be transformed, and then we add a custom parameter called `character`. We then declare that the return type is going to be a string. This should look very close to all the other types of things we have created since angular has a pretty consistent format for it's code.
+
+To use a custom Pipe, just add a pipe, and pipe name.
+
+```html
+<td>{{ product.productCode | convertToSpaces:'-'}}</td>
+```
+
+notice how we don't pass in the first parameter, that one is passed in just by using a pipe. The - is the second argument in our transform method showed below.
+
+```typescript
+transform(value: string, character: string): string {
+
+}
+```
+
+all that isn't enough, so we need to add this pipe to an angular module. In our app we only have one module, so we want to add it to our App Module, but if we had multiple we would add it in the module that declares the component that needs the pipe. For example the product-List component needs it in this case, so we add the pipe in our `@NgModule` decorator in the [app.module.ts](./src/app/app.module.ts).
+
+```typescript
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductListComponent,
+    ConvertToSpacesPipe
+  ],
+  imports: [
+    BrowserModule,FormsModule
+  ],
+  bootstrap: [AppComponent]
+})
+```
+
+With that lets build the pipe. The goal is to remove the '-' from the product code, but we want to create a pipe that is somewhat general and can replace any character with a space. To do that we are going to create a pipe file [convert-to-spaces.pipe.ts](./src/app/shared/convert-to-spaces.pipe.ts) in the shared folder since we want to be able to use this with more than one module.
+
+```typescript
+import { PipeTransform, Pipe } from '@angular/core';
+
+@Pipe({
+    name: 'convertToSpaces'
+})
+export class ConvertToSpacesPipe implements PipeTransform {
+
+    transform(value: string, character: string): string {
+        return value.replace(character, ' ');
+    }
+}
+```
+
+Import, decorate and export the pipe above. Be careful about accepting automatically added import statements since they aren't always using the correct paths or modules if you don't spell or case things correctly. The next thing to note is that we are using `replace` method that is built into angular strings to replace whatever character we pass in as character, with a space in the value that we are trying to pipe. That should be it for building this file. Now we can use our pipe in the [product-list.component.html](./src/app/products/product-list.component.html) template.
+
+```html
+                            <td>{{ product.productName }}</td>
+                            <td>{{ product.productCode | lowercase | convertToSpaces: '-' }}</td>
+                            <td>{{ product.releaseDate }}</td>
+                            <td>{{ product.price | currency:'USD':'symbol':'1.2-2' }}</td>
+                            <td>{{ product.starRating }}</td>
+                        </tr>
+```
+
+Above we add the new custom pipe name, and include the parameter for character that we are going to pass in. Even though this element already has a pipe that is fine. We can add as many pipes as needed to format data correctly. After adding this if we try to run our webpage it will break. This is because we need to declare this pipe in our [app.module.ts](./src/app/app.module.ts).
+
+```typescript
+import { ConvertToSpacesPipe } from './shared/convert-to-spaces.pipe';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductListComponent,
+    ConvertToSpacesPipe
+  ],
+  imports: [
+    BrowserModule,FormsModule
+  ],
+  bootstrap: [AppComponent]
+})
+```
+
+Like the example above, add the ConvertToSpacesPipe to our declarations array then import the pipe file and we should be back in business. Notice the code is now lowercase and has a space between the letters and numbers in the product code instead of a '-' so it worked! Next we will make the filter by list box correctly filter the array.
+
+## Filtering a List
+
+One way to filter a list is using a pipe, but angular doesn't offer any filtering pipes since they perform poorly and prevent minification. We could build a custom pipe anyway, but there is a better way. Angular reccomends adding filtering logic to our component.
+
+To do this we will create a new property that is called `filteredProducts` which is an array of IProduct that will hold only the filtered products. We don't want to filter our source array otherwise we would need to read the whole list of data every time we want to change any of the filtering.
+
+Next we will add a filter property that has `getter` and `setter` methods on them so that we can return what is currently being filtered when requested, and anytime that filter property changes we can update our `filteredProducts` so that we get real time filtering. To get this started we will update the component logic first in [product-list.component.ts](./src/app/products/product-list.component.ts).
+
+```typescript
+export class ProductListComponent implements OnInit{
+    pageTitle: string = 'Product List';
+    showImage: boolean = false;
+    imageWidth: number = 50;
+    imageMargin: number = 2;
+
+    _listFilter: string;
+    get listFilter(): string {
+        return this._listFilter;
+    }
+    set listFilter(value: string) {
+        this._listFilter = value;
+        this.filteredProducts = this.listFilter ? this.performFilter(this.listFilter) : this.products;
+    }
+```
+
+Start by replacing the `listFilter` property with a `_listFilter` Property shown above. This is a c# type syntax that will be a private variable that can't be accessed directly, and will have to be accessed with our getter and setter methods. Since we can't have the same name for the field variable name, and the get/set variable name, the field name is usually preceeded with an '_' since it will not be written out as much. The `get` method will run anytime something wants to read that property and the `set` method will fire anytime something changes that property. Like as a user is typing in the box.
+
+The more complicated part is in the setter method where we actually filter the `filteredProducts` list. The `?` is a common null check operator. If the property on the left of the `?` is not null, then it performs the action on the left of the `:` and if it is null then it does what is on the right. In this case it is saying if the the `listFilter` on this component is null then set our `filteredProducts` array equal to all the `products`, and if the `listFilter` is empty then set our filtered products to the result of our custom method `performFilter` that passes in our `listFilter`. Notice how we pass in the public version of the `_listFilter` property which is called just `listFilter`. This is so everything still conforms to our getter and setter methods as it is used in other parts of our application. That is a lot, but we still have to go over the new perform filter method at the bottom of [product-list.component.ts](./src/app/products/product-list.component.ts).
+
+```typescript
+ ngOnInit(): void{
+        console.log('In OnInit')
+    }
+
+    performFilter(filterBy: string) : IProduct[] {
+        filterBy = filterBy.toLocaleLowerCase();
+        return this.products.filter((product: IProduct) =>
+                product.productName.toLocaleLowerCase().indexOf(filterBy) !== -1);
+    }
+}
+```
+
+This method is doing a couple things. It accepts a parameter of `filterBy` that will filter the list of `products` into a new array of type `IProduct` then return that new array. To get this done we first have to set `filterBy` to lowercase so we do a case insensitive match, then we return a new array using an arrow function that filters the `products` array, gets the name of each `product` in the product array and sets it to lowercase, then checks if that product name contains the character string passed into the `filterBy` parameter and as long as that index isn't -1, meaning there is no match, it will add that `product` into our new array that is then returned.
+
+The next thing is we want to set a default value for the filter. The best place to set default values is in the class `constructor`. The constructor is called when the component is first initialized. We want to set the filteredProducts to the full list of products and then the listFilter property to cart like we had before.
+
+```typescript
+    constructor() {
+        this.filteredProducts = this.products;
+        this.listFilter = 'cart';
+    }
+
+    toggleImage(): void {
+        this.showImage = !this.showImage;
+    }
+
+    ngOnInit(): void{
+        console.log('In OnInit')
+    }
+```
+
+We can put the constructor above our other methods, and then use it to set the values of our `filteredProducts` and `listFilter` properties. Now the first time this component is initialized we will set these properties to the correct values, but not alter them again through the component lifecycle which would impact user experience.
+
+This is all fine and good, but it does nothing without interacting with our template in [product-list.component.html](./src/app/products/product-list.component.html). 
+
+```html
+                        <tr *ngFor='let product of filteredProducts'>
+                            <td>
+                                <img *ngIf='showImage'
+                                    [src]='product.imageUrl'
+                                    [title]='product.productName'
+                                    [style.width.px]='imageWidth'
+                                    [style.margin.px]='imageMargin'>
+                            </td>
+```
+
+We want to bind our table to the new filteredProducts array so that it updates as we filter, notice how we don't have change anything with our text box since it is already bound to the public version of the listFilter. After doing that we should see the product array filter and unfilter as we change what is in the filter by box. Next let's summarize what we did.
+
+## Checklists and Summary
+
+### Interfaces
+
+Define custom types
+
+Creating interfaces:
+
+* `interface` keyword
+* export it
+
+Implementing interfaces:
+
+* `implements` keyword and interface name
+* write code for each property and method
+
+### Encapsulating styles
+
+Encapsulating styles allow us to make sure that styles don't leak out to other elements of our application. It can be done in a componenet using either one of two component decorator properties.
+
+styles property
+
+* specify an array of style strings
+
+stylesUrl property
+
+* specify an array of files containing styles
+
+### Using Lifecycle Hooks
+
+* import the lifecycle hook interface
+* implement the lifecycle hook interface
+* write code for the hook method
+
+### Building a Custom Pipe
+
+import `Pipe` and `PipeTransform`
+create a class that implements `PipeTransform`
+
+* export the class
+
+Write code in the transform method.
+Decorate the class with the `@Pipe` decorator.
+
+### Using a custom pipe
+
+we can use a pipe anywhere in the template that a regular pipe can be used.  
+
+1. import the custom pipe into the module that declares the component
+1. add the pipe name to the declarations array
+
+in a template right after the thing we want to transform:
+
+1. add a pipe "|" character
+1. add the pipe's name
+1. add any pipe arguments the pipe may have separated by :
+
+Next we will build nested components.
 
