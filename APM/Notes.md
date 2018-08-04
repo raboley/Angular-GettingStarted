@@ -822,4 +822,105 @@ Two way binding takes input from a user and passes it to a class, and can take i
 <input [(ngModel)]='listFilter'>
 ```
 
-The `ngModel` directive needs to be enclosed in parenthesis and square brackets.
+The `ngModel` directive needs to be enclosed in parenthesis and square brackets. The square brackets indicate property binding from the class to the element. The parenthesis indicate event binding to notify the class of changes from the template. The order of the two can be rememberd by thinking about a banana in a box [()].
+
+ngModel is a new directive, so we need to make sure it is accessible in our template by adding it to our module. Since our product-listComponent is owned by our AppModule we need to import the ngModule from the `formsModule` that holds the ngModule directive to our appModule.
+
+to start add a `listFilter` property to our [product-list.component.ts](./src/app/products/product-list.component.ts) class.
+
+```typescript
+export class ProductListComponent {
+    pageTitle: string = 'Product List';
+    showImage: boolean = false;
+    imageWidth: number = 50;
+    imageMargin: number = 2;
+    listFilter: string = 'cart';
+....
+}
+```
+
+This property will hold the string that our list of objects will be filtered by. Now that our component has a property it is time to add the two way binding to our text box.
+
+We will use the `ngModel` directive with the banana box in the [product-list.component.html](./src/app/products/product-list.component.html) to allow for two way binding. The `[(ngModel)]='listFilter'` addition will bind the `listFilter` property to the input tag that holds our textbox. This will two way bind to our listFilter property on our component to the text box, and when someone adds something to our text box it will be passed back to our `listFilter` property.
+
+```html
+            <div class='row'>
+                <div class='col-md-2'>Filter By:</div>
+                <div class='col-md-4'>
+                    <input type='text'
+                        [(ngModel)]='listFilter' />
+                </div>
+            </div>
+            <div  class='row'>
+                <div class='col-md-6'>
+                    <h4>Filtered by: {{listFilter}}</h4>
+                </div>
+            </div>
+```
+
+Executing this code will cause an issue since our AppModule doesn't have access to the `ngModel`. To get this to succeed we need to import the `FormsModule` to our [app.module.ts](./src/app/app.module.ts).
+
+```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'
+import { AppComponent } from './app.component';
+import { ProductListComponent } from './products/product-list.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,ProductListComponent
+  ],
+  imports: [
+    BrowserModule,FormsModule
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+
+Adding an import statement for `FormsModule` and including it in the imports array in the decorator will allow our app to use the `ngModel` directive.
+
+## Transforming Data with Pipes
+
+Pipes change how bound data is displayed. They can be added to any kind of binding including interpolation, property binding, or two way binding. It can do things like put the data to uppercase, lowercase, currency, format as json, or many other things.
+
+```html
+{{ product.productCode | lowercase }}
+
+<img [src]='product.imageUrl'
+    [title]='product.productName | uppercase'>
+```
+
+Pipes can also be chained, so you could do a currency pipe that would add all uppercase USD to the end of a currency field, and then pipe in lowercase to change that to a lowercase USD. 
+
+```html
+{{ product.price | currency | lowercase}}
+```
+
+Pipes can also take paramaters shown by adding a : after the pipe name.
+
+```html
+{{ product.price | currency:'USD':'symbol':'1.2-2'}}
+```
+
+For the currency pipe above we set the currency type to USD, and show the currency symbol instead of the USD abbreviation, then we define how many decimals we want. 1 means at least one character to the left of the period, the first two means at minimum two decimal places to the right and the second 2 means at most two decimal places to the right. This should give us the standard format for how we see things in US Dollars.
+
+Next lets add some pipes to format our data in the [product-list.component.html](./src/app/products/product-list.component.html). Lets add a lowercase pipe to the product code, and a currency pipe to our price.
+
+```html
+                            </td>
+                            <td>{{ product.productName }}</td>
+                            <td>{{ product.productCode | lowercase }}</td>
+                            <td>{{ product.releaseDate }}</td>
+                            <td>{{ product.price | currency:'USD':'symbol':'1.2-2' }}</td>
+                            <td>{{ product.starRating }}</td>
+                        </tr>
+```
+
+Just adding a pipe character then lowercase will do what we want for product code, and after adding a few parameters for the currency pipe we can display currency just how we want it.
+
+## Checklist and Summary
+
+![Binding-Examples](./documentation/images/Binding-Examples.png)
+
