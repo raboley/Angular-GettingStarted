@@ -1750,3 +1750,36 @@ Register the service
 examine how to use service in a component
 
 We want to shift the responsibility for providing the product data from our hard coded data in the product component, to our data service.
+
+## How does it work
+
+Services look like regular angular classes.
+
+```typescript
+export class myService { }
+```
+
+There are two ways for a component to use a service.
+
+1. Create a new instance of the service local to the component
+1. Register the service with angular
+
+Local instance
+
+```typescript
+let svc = new myService();
+```
+
+Creating a local instance makes it only accessible by this component, which makes it hard to share data and mock the service for testing.
+
+Dependency injection
+
+```typescript
+constructor(private _myService) { }
+```
+
+Registering the service with angular creates a single instance of the service called a `singleton`. We register our instances with angular which creates a managed container of our services. When the component needs the service it declares that service as a dependency which angular provides or injects. This looks close to a regular parameter for the constructor.
+
+`Dependency Injection` is a coding pattern where a class recieves the objects it needs (referred to as dependencies) instead of creating them itself. In angular this external source is the angular injector.
+
+## Building a service
