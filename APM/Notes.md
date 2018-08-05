@@ -1483,4 +1483,69 @@ export class AppModule { }
 
  input properties can solve both of these problems.
 
- ## Passing data to a nested component
+## Passing data to a nested component
+
+ if a nested components wants to pass information from its container it must expose a property via the `@input` decorator. We can use the `@input` decorator to decorate a property or even an object, like this:
+
+ ```typescript
+export class StarComponent {
+    @input() rating: number;
+    starWidth: number;
+}
+ ```
+
+ The container then sets that property using property binding in the template like so:
+
+ ```html
+<td>
+    <pm-star [rating]='product.starRating'>
+    </pm-star>
+</td>
+ ```
+
+ The nested component's property rating is bound to the parent component's `starRating` property. The only time we can specify a nested component's property on the left hand side of an equals sign in property binding, is when it is decorated with the `@input` decorator. So with the same example if we tried to bind the `starWidth` as well, that wouldn't work unless we also add the `@input` decorator to the `starWidth` property.
+
+ Now lets apply this to our code. Add the input decorator to the rating in our [star.component.ts](./src/app/shared/star.component.ts).
+
+ ```typescript
+import { Component, OnChanges, Input } from "@angular/core";
+
+@Component({
+    selector: 'pm-star',
+    templateUrl: './star.component.html',
+    styleUrls: ['./star.component.css']
+})
+
+export class StarComponent implements OnChanges{
+    @Input() rating: number;
+    starWidth: number;
+
+    ngOnChanges() {
+        this.starWidth = this.rating * 75 / 5;
+    }
+}
+ ```
+
+ We add the `@Input` decorator and then import it from `@angular/core`. We also can get rid of the default value since the container component will be passing in the real value. Next we update the container's template [product-list.component.html](./src/app/products/product-list.component.html).
+
+ ```html
+                        <tr *ngFor='let product of filteredProducts'>
+                            <td>
+                                <img *ngIf='showImage'
+                                    [src]='product.imageUrl'
+                                    [title]='product.productName'
+                                    [style.width.px]='imageWidth'
+                                    [style.margin.px]='imageMargin'>
+                            </td>
+                            <td>{{ product.productName }}</td>
+                            <td>{{ product.productCode | lowercase | convertToSpaces: '-' }}</td>
+                            <td>{{ product.releaseDate }}</td>
+                            <td>{{ product.price | currency:'USD':'symbol':'1.2-2' }}</td>
+                            <td><pm-star [rating]='product.starRating'></pm-star></td>
+                        </tr>
+ ```
+
+ We add the property binding to our newly exposed `rating` property and bind it to the product property of `starRating`. That should now show the correct number of stars when we view it in the browser again. Next let's see how to send information from the nested component to the container component.
+
+## Passing Data from a Component using @Output
+
