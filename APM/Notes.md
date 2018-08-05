@@ -1364,3 +1364,71 @@ Overview
 1. raise an event from a nested component using `@output`
 
 We want to replace the rating number, with an object that is a variable amount of stars.
+
+## Building a Nested Component
+
+Nested components are componets that sit inside a container or parent component. They can interact with each other using the @output and @input decorators. We want to replace the star rating numbers with a star rating image. For this to work properly it will need to get the number of stars from the containing component as an input and if someone clicks on the stars we want to raise an event to notify the container.
+
+To start we want to put our star component in the shared folder since it could be used by more than just our products container. That should already be created with a style sheet [star.component.css](./src/app/shared/star.component.css) and template [star.component.html](./src/app/shared/star.component.html). Last we need a new component file in the same folder called [star.component.ts](./src/app/shared/star.component.ts). Inside that we will link up the style and template sheets to this component and create it like any other component.
+
+```typescript
+import { Component } from "@angular/core";
+
+@Component({
+    selector: 'pm-star',
+    templateUrl: './star.component.html',
+    styleUrls: ['./star.component.css']
+})
+
+export class StarComponent {
+
+}
+```
+
+Next taking a look in our [star.component.html](./src/app/shared/star.component.html) template we see that it declares five star elements, and then restricts the size of box containing the stars by using the StarWidth property.
+
+```html
+<div class="crop"
+     [style.width.px]="starWidth"
+     [title]="rating">
+  <div style="width: 75px">
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+  </div>
+</div>
+```
+
+ This allows us to show partial stars such as 4.5 by making the box only big enough to show 4.5 stars. This html is using property binding to bind the title and width of the box to two properties in the component. For this to work we need to add these two properties to our [star.component.ts](./src/app/shared/star.component.ts). 
+
+ ```typescript
+export class StarComponent {
+    rating: number = 4;
+    starWidth: number;
+}
+ ```
+
+ since we don't have a way of setting the rating value currently we will hardcode it to see some stars. The starWidth property is supposed to change based on how many stars an object is. To make sure this updates when the number changes we need to add the onChanges lifecycle hook.
+
+ ```typescript
+import { Component, OnChanges } from "@angular/core";
+
+@Component({
+    selector: 'pm-star',
+    templateUrl: './star.component.html',
+    styleUrls: ['./star.component.css']
+})
+
+export class StarComponent implements OnChanges{
+    rating: number = 4;
+    starWidth: number;
+
+    ngOnChanges() {
+        this.starWidth = this.rating * 75 / 5;
+    }
+}
+ ```
+
+ We `implement` the `OnChanges` interface, then import the `OnChanges` module and add the `ngOnChanges` method. In that method we will set the `starWidth` property to be 75 fifths the size of the `rating` property. This will make the box around the stars only as big as the `rating` the `product` is given. Since all the property binding is already in the template html our component is now complete! Next we need to nest this in another component.
