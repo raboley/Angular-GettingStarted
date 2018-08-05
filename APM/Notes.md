@@ -1496,12 +1496,12 @@ export class StarComponent {
 
  The container then sets that property using property binding in the template like so:
 
- ```html
+```html
 <td>
     <pm-star [rating]='product.starRating'>
     </pm-star>
 </td>
- ```
+```
 
  The nested component's property rating is bound to the parent component's `starRating` property. The only time we can specify a nested component's property on the left hand side of an equals sign in property binding, is when it is decorated with the `@input` decorator. So with the same example if we tried to bind the `starWidth` as well, that wouldn't work unless we also add the `@input` decorator to the `starWidth` property.
 
@@ -1549,3 +1549,150 @@ export class StarComponent implements OnChanges{
 
 ## Passing Data from a Component using @Output
 
+Now if we want to send information back to the containing component, we can raise an event. To do this we use the @output decorator. The only way to pass this data is by decorating an event property, and the information being passed becomes the event payload.
+
+```typescript
+export class StarComponent {
+    @input() rating: number;
+    starWidth: number;
+    @Output() notify: EventEmitter<string> = new EventEmitter<string>();
+}
+```
+
+In angular an event is defined with an EventEmitter object, so we create a new instance of an EventEmitter object for our notify property. The syntax being used after the event emitter is a generic `EventEmitter<string>`. The `<string>` portion tells angular that our event payload is going to be of type string.
+
+It is then decorated with the @Output decorator so that angular knows to expose this event. Then we can make the stars component a button and add a method to fire when the star button's click event is triggered.
+
+star component template
+
+```html
+<div (click)='onClick()'>
+    ... stars ...
+</div>
+```
+
+using event binding we bind to the click event on the stars div template to call a method we will create called onClick.
+
+Star component
+
+```typescript
+export class StarComponent {
+    @input() rating: number;
+    starWidth: number;
+    @Output() notify: EventEmitter<string> = new EventEmitter<string>();
+
+    onClick() {
+        this.notify.emit('clicked!');
+    }
+}
+```
+
+Now we add the `onClick` method which will use the emit method of the `notify` property to raise the event to the container. If we want to pass data through as a payload, we add it into the emit method. Then we bind again in the [product-list.component.html](./src/app/products/product-list.component.html) template to the notify event and call a method so the container is watching for this event to fire.
+
+```html
+<td>
+    <pm-star [rating]='product.starRating'
+             (notify)='onNotify($event)'>
+    </pm-star>
+</td>
+```
+
+Like the `@Input` binding, the `@Output` binding puts the property we are binding to in the nested component on the left, and the method that the container should call on the right. We can access the event payload passed in by using `$event` in the event binding. Last we need to see what the container component's method looks like.
+
+```typescript
+export class ProductListComponent {
+    onNotify(message: string): void { }
+}
+ ```
+
+We make the onNotify method and can have that do whatever we need. Finally lets look at the entire pieces of code and where they are all going.
+
+![OutputBindingDiagram.jpeg](./documentation/images/OutputBindingDiagram.jpeg)
+
+Now we will actually modify our app to use this @Output binding to trigger an event when clicking on the star component. We start with adding event binding for the div elements click event in [star.component.html](./src/app/shared/star.component.html)
+
+```html
+<div class="crop"
+     [style.width.px]="starWidth"
+     [title]="rating"
+     (click)="onClick()">
+  <div style="width: 75px">
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+  </div>
+</div>
+```
+
+Now that the div has a `click` event, we need to create the `onClick` method for our star component in [star.component.ts](./src/app/shared/star.component.ts). For now lets just have it write something to the log so we can make sure it is working.
+
+```typescript
+export class StarComponent implements OnChanges{
+    @Input() rating: number;
+    starWidth: number;
+
+    ngOnChanges() {
+        this.starWidth = this.rating * 75 / 5;
+    }
+
+    onClick(): void {
+        console.log(`The rating ${this.rating} was clicked!`);
+    }
+}
+```
+
+Using the backticks we can create an inline template then using interpolation to bind to this elements rating property and see the specific rating we click write out to the console. Now if you click on the stars we should get log messages that specify what the rating was that was clicked. Now we need to set this up to talk to the parent component by adding an event with the `@Output` decorator in [star.component.ts](./src/app/shared/star.component.ts).
+
+```typescript
+import { Component, OnChanges, Input, EventEmitter, Output } from "@angular/core";
+
+@Component({
+    selector: 'pm-star',
+    templateUrl: './star.component.html',
+    styleUrls: ['./star.component.css']
+})
+
+export class StarComponent implements OnChanges{
+    @Input() rating: number;
+    starWidth: number;
+    @Output() ratingClicked: EventEmitter<string> = 
+            new EventEmitter<string>();
+
+    ngOnChanges() {
+        this.starWidth = this.rating * 75 / 5;
+    }
+
+    onClick(): void {
+        this.ratingClicked.emit(`The rating ${this.rating} was clicked!`)
+    }
+}
+```
+
+we create an event called ratingClicked that instantiates a new object of type event emitter that will carry a string payload. we then add the ratingClicked event to our onClick method and using the emit method we pass in the string template we were writing to console last time, and using that as our payload. Next we need to watch for it in the [product-list.component.html](./src/app/products/product-list.component.html) and bind to the event we just created.
+
+```html
+<td>
+    <pm-star [rating]='product.starRating'
+            (ratingClicked)='onRatingClicked($event)'>
+    </pm-star>
+</td>
+```
+
+We event bind to `ratingClicked` so that our parent component can see the raised event by our child star component. We then have it trigger a method we will create in our [product-list.component.ts](./src/app/products/product-list.component.ts) that we will call `onRatingClicked`. Remember we had our event emit a payload of type string that is going to say which rating was clicked. We can access this information using the `$event` keyword in our created method. This is standard syntax to access information from `@Output` binding where we can pass in the information from the child to the parent with `$event`.
+
+```typescript
+    constructor() {
+        this.filteredProducts = this.products;
+        this.listFilter = 'cart';
+    }
+
+    onRatingClicked(message: string): void {
+        this.pageTitle = 'Product List: ' + message;
+    }
+```
+
+In the product-list component we create the onRatingClicked method which accepts a parameter of type string that will be our payload, and then changes the page title to be our title + whatever we pass in as the event payload. after doing this the page title should change whenever the star is clicked. Not a real world example, but shows how output event binding works. Next we will go over the checklists.
+
+## Checklists and Summary
