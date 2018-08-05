@@ -1696,3 +1696,38 @@ We event bind to `ratingClicked` so that our parent component can see the raised
 In the product-list component we create the onRatingClicked method which accepts a parameter of type string that will be our payload, and then changes the page title to be our title + whatever we pass in as the event payload. after doing this the page title should change whenever the star is clicked. Not a real world example, but shows how output event binding works. Next we will go over the checklists.
 
 ## Checklists and Summary
+
+### Nested Component
+
+Input decorator
+
+* Atached to a property of any type
+* prefix with @; suffix with ()
+
+Output decorator
+
+* Attached to a property declared as EventEmitter
+* Use the generic argument to define the event payload type
+* Use teh new keyword to create an instance of the EventEmitter
+* Prefix with @; suffix with ()
+
+### Container Component
+
+Use the directive
+
+* Directive name -> nested component's selector
+
+Use property binding to pass data to the nested component
+
+Use event binding to respond to tevents from the nested component
+
+* use $event to pass information to the parent component from the child component using an event
+
+### Summary
+
+Building a nested component
+using a nested component
+passing data to a nested component using @input
+Raising an event with the @output component
+
+Next we will create a service so we won't need hard coded product data in our component.
