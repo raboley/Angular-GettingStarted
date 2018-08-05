@@ -1731,3 +1731,22 @@ passing data to a nested component using @input
 Raising an event with the @output component
 
 Next we will create a service so we won't need hard coded product data in our component.
+
+# Services and Dependency Injection
+
+## Intro
+
+A service is a class with a focused purpose. The functionality they provide usually does not belong to just one component. They are usually used for features that:
+
+* Are independent from any particular component
+* Provide shared data or logic across components
+* Encapsulate external interactions
+
+Services make code easier to test, debug and re-use.
+
+How does it work?
+Build a service
+Register the service
+examine how to use service in a component
+
+We want to shift the responsibility for providing the product data from our hard coded data in the product component, to our data service.
