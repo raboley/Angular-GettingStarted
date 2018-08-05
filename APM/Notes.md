@@ -1266,7 +1266,7 @@ The next thing is we want to set a default value for the filter. The best place 
 
 We can put the constructor above our other methods, and then use it to set the values of our `filteredProducts` and `listFilter` properties. Now the first time this component is initialized we will set these properties to the correct values, but not alter them again through the component lifecycle which would impact user experience.
 
-This is all fine and good, but it does nothing without interacting with our template in [product-list.component.html](./src/app/products/product-list.component.html). 
+This is all fine and good, but it does nothing without interacting with our template in [product-list.component.html](./src/app/products/product-list.component.html).
 
 ```html
                         <tr *ngFor='let product of filteredProducts'>
@@ -1340,3 +1340,394 @@ in a template right after the thing we want to transform:
 
 Next we will build nested components.
 
+# Building Nested Components
+
+## Introduction
+
+Like Russian dolls we can nest components inside components, and expose data between components. There are a couple ways we can use a component.
+
+as a directive
+
+as a routing target
+
+What makes a component nestable? Any of our components can be nested if they have a selector in the `@component` decorator. There are a couple things that make a component really nestable.
+
+* if it is a fragment of a larger view
+* if it has a selector in the @componenet decorator
+* optionally if it communicates with its container
+
+Overview
+
+1. build a nested component
+1. use it as a directive
+1. pass data to a nested component using `@input`
+1. raise an event from a nested component using `@output`
+
+We want to replace the rating number, with an object that is a variable amount of stars.
+
+## Building a Nested Component
+
+Nested components are componets that sit inside a container or parent component. They can interact with each other using the @output and @input decorators. We want to replace the star rating numbers with a star rating image. For this to work properly it will need to get the number of stars from the containing component as an input and if someone clicks on the stars we want to raise an event to notify the container.
+
+To start we want to put our star component in the shared folder since it could be used by more than just our products container. That should already be created with a style sheet [star.component.css](./src/app/shared/star.component.css) and template [star.component.html](./src/app/shared/star.component.html). Last we need a new component file in the same folder called [star.component.ts](./src/app/shared/star.component.ts). Inside that we will link up the style and template sheets to this component and create it like any other component.
+
+```typescript
+import { Component } from "@angular/core";
+
+@Component({
+    selector: 'pm-star',
+    templateUrl: './star.component.html',
+    styleUrls: ['./star.component.css']
+})
+
+export class StarComponent {
+
+}
+```
+
+Next taking a look in our [star.component.html](./src/app/shared/star.component.html) template we see that it declares five star elements, and then restricts the size of box containing the stars by using the StarWidth property.
+
+```html
+<div class="crop"
+     [style.width.px]="starWidth"
+     [title]="rating">
+  <div style="width: 75px">
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+  </div>
+</div>
+```
+
+ This allows us to show partial stars such as 4.5 by making the box only big enough to show 4.5 stars. This html is using property binding to bind the title and width of the box to two properties in the component. For this to work we need to add these two properties to our [star.component.ts](./src/app/shared/star.component.ts). 
+
+ ```typescript
+export class StarComponent {
+    rating: number = 4;
+    starWidth: number;
+}
+ ```
+
+ since we don't have a way of setting the rating value currently we will hardcode it to see some stars. The starWidth property is supposed to change based on how many stars an object is. To make sure this updates when the number changes we need to add the onChanges lifecycle hook.
+
+ ```typescript
+import { Component, OnChanges } from "@angular/core";
+
+@Component({
+    selector: 'pm-star',
+    templateUrl: './star.component.html',
+    styleUrls: ['./star.component.css']
+})
+
+export class StarComponent implements OnChanges{
+    rating: number = 4;
+    starWidth: number;
+
+    ngOnChanges() {
+        this.starWidth = this.rating * 75 / 5;
+    }
+}
+ ```
+
+ We `implement` the `OnChanges` interface, then import the `OnChanges` module and add the `ngOnChanges` method. In that method we will set the `starWidth` property to be 75 fifths the size of the `rating` property. This will make the box around the stars only as big as the `rating` the `product` is given. Since all the property binding is already in the template html our component is now complete! Next we need to nest this in another component.
+
+## Using a nested component
+
+ We do this by using our component as a directive in another component. To give that component access to the module we need to declare this nested component in the declarations of the module it belongs to and import what we need, which for us is still the app module.
+
+ To start we need to add the selector of our star component into the template [product-list.component.html](./src/app/products/product-list.component.html) of our product list component.
+
+ ```html
+                            </td>
+                            <td>{{ product.productName }}</td>
+                            <td>{{ product.productCode | lowercase | convertToSpaces: '-' }}</td>
+                            <td>{{ product.releaseDate }}</td>
+                            <td>{{ product.price | currency:'USD':'symbol':'1.2-2' }}</td>
+                            <td><pm-star></pm-star></td>
+                        </tr>
+                    </tbody>
+ ```
+
+ We replace the binding we had for star rating with the `<pm-star>` directive to nest this component. Then we need to tell angular where to find this directive. Since we only have one module, we will add our component there [app.module.ts](./src/app/app.module.ts).
+
+ ```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'
+import { AppComponent } from './app.component';
+import { ProductListComponent } from './products/product-list.component';
+import { ConvertToSpacesPipe } from './shared/convert-to-spaces.pipe';
+import { StarComponent } from './shared/star.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductListComponent,
+    ConvertToSpacesPipe,
+    StarComponent
+  ],
+  imports: [
+    BrowserModule,FormsModule
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+ ```
+
+ By adding and importing the StarComponent it now should be accessible by our product-list component. Checking in the app we should now see some stars. Unfortunately we will see 5 stars everywhere. If you hover over the stars you will see 4 so we know the default property is being set, but our onChanges method is only getting changed when an input property is changed. We have two problems.
+
+ 1. We don't have a way of triggering our onChanges method
+ 1. We don't have a way of setting the correct value for our star rating from our container.
+
+ input properties can solve both of these problems.
+
+## Passing data to a nested component
+
+ if a nested components wants to pass information from its container it must expose a property via the `@input` decorator. We can use the `@input` decorator to decorate a property or even an object, like this:
+
+ ```typescript
+export class StarComponent {
+    @input() rating: number;
+    starWidth: number;
+}
+ ```
+
+ The container then sets that property using property binding in the template like so:
+
+```html
+<td>
+    <pm-star [rating]='product.starRating'>
+    </pm-star>
+</td>
+```
+
+ The nested component's property rating is bound to the parent component's `starRating` property. The only time we can specify a nested component's property on the left hand side of an equals sign in property binding, is when it is decorated with the `@input` decorator. So with the same example if we tried to bind the `starWidth` as well, that wouldn't work unless we also add the `@input` decorator to the `starWidth` property.
+
+ Now lets apply this to our code. Add the input decorator to the rating in our [star.component.ts](./src/app/shared/star.component.ts).
+
+ ```typescript
+import { Component, OnChanges, Input } from "@angular/core";
+
+@Component({
+    selector: 'pm-star',
+    templateUrl: './star.component.html',
+    styleUrls: ['./star.component.css']
+})
+
+export class StarComponent implements OnChanges{
+    @Input() rating: number;
+    starWidth: number;
+
+    ngOnChanges() {
+        this.starWidth = this.rating * 75 / 5;
+    }
+}
+ ```
+
+ We add the `@Input` decorator and then import it from `@angular/core`. We also can get rid of the default value since the container component will be passing in the real value. Next we update the container's template [product-list.component.html](./src/app/products/product-list.component.html).
+
+ ```html
+                        <tr *ngFor='let product of filteredProducts'>
+                            <td>
+                                <img *ngIf='showImage'
+                                    [src]='product.imageUrl'
+                                    [title]='product.productName'
+                                    [style.width.px]='imageWidth'
+                                    [style.margin.px]='imageMargin'>
+                            </td>
+                            <td>{{ product.productName }}</td>
+                            <td>{{ product.productCode | lowercase | convertToSpaces: '-' }}</td>
+                            <td>{{ product.releaseDate }}</td>
+                            <td>{{ product.price | currency:'USD':'symbol':'1.2-2' }}</td>
+                            <td><pm-star [rating]='product.starRating'></pm-star></td>
+                        </tr>
+ ```
+
+ We add the property binding to our newly exposed `rating` property and bind it to the product property of `starRating`. That should now show the correct number of stars when we view it in the browser again. Next let's see how to send information from the nested component to the container component.
+
+## Passing Data from a Component using @Output
+
+Now if we want to send information back to the containing component, we can raise an event. To do this we use the @output decorator. The only way to pass this data is by decorating an event property, and the information being passed becomes the event payload.
+
+```typescript
+export class StarComponent {
+    @input() rating: number;
+    starWidth: number;
+    @Output() notify: EventEmitter<string> = new EventEmitter<string>();
+}
+```
+
+In angular an event is defined with an EventEmitter object, so we create a new instance of an EventEmitter object for our notify property. The syntax being used after the event emitter is a generic `EventEmitter<string>`. The `<string>` portion tells angular that our event payload is going to be of type string.
+
+It is then decorated with the @Output decorator so that angular knows to expose this event. Then we can make the stars component a button and add a method to fire when the star button's click event is triggered.
+
+star component template
+
+```html
+<div (click)='onClick()'>
+    ... stars ...
+</div>
+```
+
+using event binding we bind to the click event on the stars div template to call a method we will create called onClick.
+
+Star component
+
+```typescript
+export class StarComponent {
+    @input() rating: number;
+    starWidth: number;
+    @Output() notify: EventEmitter<string> = new EventEmitter<string>();
+
+    onClick() {
+        this.notify.emit('clicked!');
+    }
+}
+```
+
+Now we add the `onClick` method which will use the emit method of the `notify` property to raise the event to the container. If we want to pass data through as a payload, we add it into the emit method. Then we bind again in the [product-list.component.html](./src/app/products/product-list.component.html) template to the notify event and call a method so the container is watching for this event to fire.
+
+```html
+<td>
+    <pm-star [rating]='product.starRating'
+             (notify)='onNotify($event)'>
+    </pm-star>
+</td>
+```
+
+Like the `@Input` binding, the `@Output` binding puts the property we are binding to in the nested component on the left, and the method that the container should call on the right. We can access the event payload passed in by using `$event` in the event binding. Last we need to see what the container component's method looks like.
+
+```typescript
+export class ProductListComponent {
+    onNotify(message: string): void { }
+}
+ ```
+
+We make the onNotify method and can have that do whatever we need. Finally lets look at the entire pieces of code and where they are all going.
+
+![OutputBindingDiagram.jpeg](./documentation/images/OutputBindingDiagram.jpeg)
+
+Now we will actually modify our app to use this @Output binding to trigger an event when clicking on the star component. We start with adding event binding for the div elements click event in [star.component.html](./src/app/shared/star.component.html)
+
+```html
+<div class="crop"
+     [style.width.px]="starWidth"
+     [title]="rating"
+     (click)="onClick()">
+  <div style="width: 75px">
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+    <span class="fa fa-star"></span>
+  </div>
+</div>
+```
+
+Now that the div has a `click` event, we need to create the `onClick` method for our star component in [star.component.ts](./src/app/shared/star.component.ts). For now lets just have it write something to the log so we can make sure it is working.
+
+```typescript
+export class StarComponent implements OnChanges{
+    @Input() rating: number;
+    starWidth: number;
+
+    ngOnChanges() {
+        this.starWidth = this.rating * 75 / 5;
+    }
+
+    onClick(): void {
+        console.log(`The rating ${this.rating} was clicked!`);
+    }
+}
+```
+
+Using the backticks we can create an inline template then using interpolation to bind to this elements rating property and see the specific rating we click write out to the console. Now if you click on the stars we should get log messages that specify what the rating was that was clicked. Now we need to set this up to talk to the parent component by adding an event with the `@Output` decorator in [star.component.ts](./src/app/shared/star.component.ts).
+
+```typescript
+import { Component, OnChanges, Input, EventEmitter, Output } from "@angular/core";
+
+@Component({
+    selector: 'pm-star',
+    templateUrl: './star.component.html',
+    styleUrls: ['./star.component.css']
+})
+
+export class StarComponent implements OnChanges{
+    @Input() rating: number;
+    starWidth: number;
+    @Output() ratingClicked: EventEmitter<string> = 
+            new EventEmitter<string>();
+
+    ngOnChanges() {
+        this.starWidth = this.rating * 75 / 5;
+    }
+
+    onClick(): void {
+        this.ratingClicked.emit(`The rating ${this.rating} was clicked!`)
+    }
+}
+```
+
+we create an event called ratingClicked that instantiates a new object of type event emitter that will carry a string payload. we then add the ratingClicked event to our onClick method and using the emit method we pass in the string template we were writing to console last time, and using that as our payload. Next we need to watch for it in the [product-list.component.html](./src/app/products/product-list.component.html) and bind to the event we just created.
+
+```html
+<td>
+    <pm-star [rating]='product.starRating'
+            (ratingClicked)='onRatingClicked($event)'>
+    </pm-star>
+</td>
+```
+
+We event bind to `ratingClicked` so that our parent component can see the raised event by our child star component. We then have it trigger a method we will create in our [product-list.component.ts](./src/app/products/product-list.component.ts) that we will call `onRatingClicked`. Remember we had our event emit a payload of type string that is going to say which rating was clicked. We can access this information using the `$event` keyword in our created method. This is standard syntax to access information from `@Output` binding where we can pass in the information from the child to the parent with `$event`.
+
+```typescript
+    constructor() {
+        this.filteredProducts = this.products;
+        this.listFilter = 'cart';
+    }
+
+    onRatingClicked(message: string): void {
+        this.pageTitle = 'Product List: ' + message;
+    }
+```
+
+In the product-list component we create the onRatingClicked method which accepts a parameter of type string that will be our payload, and then changes the page title to be our title + whatever we pass in as the event payload. after doing this the page title should change whenever the star is clicked. Not a real world example, but shows how output event binding works. Next we will go over the checklists.
+
+## Checklists and Summary
+
+### Nested Component
+
+Input decorator
+
+* Atached to a property of any type
+* prefix with @; suffix with ()
+
+Output decorator
+
+* Attached to a property declared as EventEmitter
+* Use the generic argument to define the event payload type
+* Use teh new keyword to create an instance of the EventEmitter
+* Prefix with @; suffix with ()
+
+### Container Component
+
+Use the directive
+
+* Directive name -> nested component's selector
+
+Use property binding to pass data to the nested component
+
+Use event binding to respond to tevents from the nested component
+
+* use $event to pass information to the parent component from the child component using an event
+
+### Summary
+
+Building a nested component
+using a nested component
+passing data to a nested component using @input
+Raising an event with the @output component
+
+Next we will create a service so we won't need hard coded product data in our component.
