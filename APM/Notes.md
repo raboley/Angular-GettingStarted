@@ -1266,7 +1266,7 @@ The next thing is we want to set a default value for the filter. The best place 
 
 We can put the constructor above our other methods, and then use it to set the values of our `filteredProducts` and `listFilter` properties. Now the first time this component is initialized we will set these properties to the correct values, but not alter them again through the component lifecycle which would impact user experience.
 
-This is all fine and good, but it does nothing without interacting with our template in [product-list.component.html](./src/app/products/product-list.component.html). 
+This is all fine and good, but it does nothing without interacting with our template in [product-list.component.html](./src/app/products/product-list.component.html).
 
 ```html
                         <tr *ngFor='let product of filteredProducts'>
@@ -1432,3 +1432,55 @@ export class StarComponent implements OnChanges{
  ```
 
  We `implement` the `OnChanges` interface, then import the `OnChanges` module and add the `ngOnChanges` method. In that method we will set the `starWidth` property to be 75 fifths the size of the `rating` property. This will make the box around the stars only as big as the `rating` the `product` is given. Since all the property binding is already in the template html our component is now complete! Next we need to nest this in another component.
+
+## Using a nested component
+
+ We do this by using our component as a directive in another component. To give that component access to the module we need to declare this nested component in the declarations of the module it belongs to and import what we need, which for us is still the app module.
+
+ To start we need to add the selector of our star component into the template [product-list.component.html](./src/app/products/product-list.component.html) of our product list component.
+
+ ```html
+                            </td>
+                            <td>{{ product.productName }}</td>
+                            <td>{{ product.productCode | lowercase | convertToSpaces: '-' }}</td>
+                            <td>{{ product.releaseDate }}</td>
+                            <td>{{ product.price | currency:'USD':'symbol':'1.2-2' }}</td>
+                            <td><pm-star></pm-star></td>
+                        </tr>
+                    </tbody>
+ ```
+
+ We replace the binding we had for star rating with the `<pm-star>` directive to nest this component. Then we need to tell angular where to find this directive. Since we only have one module, we will add our component there [app.module.ts](./src/app/app.module.ts).
+
+ ```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'
+import { AppComponent } from './app.component';
+import { ProductListComponent } from './products/product-list.component';
+import { ConvertToSpacesPipe } from './shared/convert-to-spaces.pipe';
+import { StarComponent } from './shared/star.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductListComponent,
+    ConvertToSpacesPipe,
+    StarComponent
+  ],
+  imports: [
+    BrowserModule,FormsModule
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+ ```
+
+ By adding and importing the StarComponent it now should be accessible by our product-list component. Checking in the app we should now see some stars. Unfortunately we will see 5 stars everywhere. If you hover over the stars you will see 4 so we know the default property is being set, but our onChanges method is only getting changed when an input property is changed. We have two problems.
+
+ 1. We don't have a way of triggering our onChanges method
+ 1. We don't have a way of setting the correct value for our star rating from our container.
+
+ input properties can solve both of these problems.
+
+ ## Passing data to a nested component
