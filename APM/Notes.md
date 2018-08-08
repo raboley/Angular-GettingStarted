@@ -1731,3 +1731,249 @@ passing data to a nested component using @input
 Raising an event with the @output component
 
 Next we will create a service so we won't need hard coded product data in our component.
+
+# Services and Dependency Injection
+
+## Intro
+
+A service is a class with a focused purpose. The functionality they provide usually does not belong to just one component. They are usually used for features that:
+
+* Are independent from any particular component
+* Provide shared data or logic across components
+* Encapsulate external interactions
+
+Services make code easier to test, debug and re-use.
+
+How does it work?
+Build a service
+Register the service
+examine how to use service in a component
+
+We want to shift the responsibility for providing the product data from our hard coded data in the product component, to our data service.
+
+## How does it work
+
+Services look like regular angular classes.
+
+```typescript
+export class myService { }
+```
+
+There are two ways for a component to use a service.
+
+1. Create a new instance of the service local to the component
+1. Register the service with angular
+
+Local instance
+
+```typescript
+let svc = new myService();
+```
+
+Creating a local instance makes it only accessible by this component, which makes it hard to share data and mock the service for testing.
+
+Dependency injection
+
+```typescript
+constructor(private _myService) { }
+```
+
+Registering the service with angular creates a single instance of the service called a `singleton`. We register our instances with angular which creates a managed container of our services. When the component needs the service it declares that service as a dependency which angular provides or injects. This looks close to a regular parameter for the constructor.
+
+`Dependency Injection` is a coding pattern where a class recieves the objects it needs (referred to as dependencies) instead of creating them itself. In angular this external source is the angular injector.
+
+## Building a service
+
+To build a service we do the same basic steps as creating a component.
+
+1. create a class
+1. define metadata with a decorator
+1. import what we need
+
+A sample service could look like this:
+
+```typescript
+import { Injectable } from '@angular/core'
+
+@Injectable()
+export class ProductService{
+
+    getProducts(): IProduct {
+    }
+}
+```
+
+First we create a class then export it so it can be used outside this file. There is a sample method called `getProducts` which currently doesn't do anything but would expect to return something using our `IProduct` interface. We then decorate the class with the `@Injectible` decorator. Finally we import the `@Injectable` decorator from angular core. We will start by creating a new file for our service called [product.service.ts](./src/app/products/product.service.ts) in the products folder since our service will only return product data.
+
+```typescript
+import { Injectable } from "@angular/core";
+import { IProduct } from "./product";
+
+@Injectable()
+
+export class ProductService {
+
+    getProducts(): IProduct[] {
+        return;
+    }
+}
+```
+
+Just like the other classes we are doing the same 3 steps, and then adding a method that returns an array of `IProducts` which we need to import. Unless specified as private or protected any property or method on this class will be accessible by components that inject the service. For now we can hard code in the products we used to have hard coded in the component itself. That will give us a class like this:
+
+```typescript
+import { Injectable } from "@angular/core";
+import { IProduct } from "./product";
+
+@Injectable()
+
+export class ProductService {
+
+    getProducts(): IProduct[] {
+        return [
+            {
+                "productId": 1,
+                "productName": "Leaf Rake",
+                "productCode": "GDN-0011",
+                "releaseDate": "March 19, 2016",
+                "description": "Leaf rake with 48-inch wooden handle.",
+                "price": 19.95,
+                "starRating": 3.2,
+                "imageUrl": "https://openclipart.org/image/300px/svg_to_png/26215/Anonymous_Leaf_Rake.png"
+          },
+          {
+                "productId": 2,
+                "productName": "Garden Cart",
+                "productCode": "GDN-0023",
+                "releaseDate": "March 18, 2016",
+                "description": "15 gallon capacity rolling garden cart",
+                "price": 32.99,
+                "starRating": 4.2,
+                "imageUrl": "https://openclipart.org/image/300px/svg_to_png/58471/garden_cart.png"
+          }
+        ];
+    }
+}
+```
+
+Now that this service should return data, we need to add it to the angular injector.
+
+## Registering the service
+
+There are root injectors, and component injectors that mirror the component tree. Root injector means that it is accessible to all areas of the application. If you register it with the component it is only accessible within the component and it's children, and creates multiple instances of the service. Most the time we want to inject the services into the root injector.
+
+to do this you add some information in the @injectible decorator
+
+```typescript
+@injectable({
+    provdidedIn: 'root'
+})
+```
+
+We can then access this service within many components. Let's add this metadata to our decorator in the [product.service.ts](./src/app/products/product.service.ts).
+
+```typescript
+import { Injectable } from "@angular/core";
+import { IProduct } from "./product";
+
+@Injectable({
+    providedIn: 'root'
+})
+
+export class ProductService {
+```
+
+Now it should be available to all other components. If we wanted it to be available to only specific components then we would add it to the component's decorator. For example if we wanted to ONLY use this in the product component we could add the providers element to that class
+
+```typescript
+@Component({
+    providers: [ProductService]
+})
+```
+
+This will allow the productService to be used by that component. Old school angular would have us use the same providers syntax above, but in a module instead. If you see that it is valid, but recommended to use the providedIn feature instead. Now that it is available, let's see how to use it.
+
+## Injecting the service
+
+Dependency injection in typescript is done in the constructor. If we need to do dependency injection then we need an explicit constructor. Constructors should hold as little code as possible and should not have side effects since it is used in initialization.
+
+To do dependency injection we will add an explicit constructor that accepts a service as a parameter, and then create a private variable to hold the service.
+
+```typescript
+export class ProductListComponent {
+    private _productService;
+    constructor(productService: ProductService){
+        this._productService = productService;
+    }
+}
+```
+
+The injector will inject the service requested in the constructor, and then the service gets captured in the private variable which can then be used in the class to acess the methods and properties of the service. This is such a common pattern that typescript created a shorthand for it.
+
+```typescript
+export class ProductListComponent {
+    constructor(private productService: ProductService)
+}
+```
+
+This becomes a shortcut for declaring the variable, creating a parameter then setting the output of the paramater to the variable. Next we will inject this service into our [product-list.component.ts](./src/app/products/product-list.component.ts). Adding the shorthand for our service injection in the constructor parameters below gives us an instance of the `ProductService` class that can be referenced with `this.productService`.
+
+```typescript
+    products: IProduct[] = [];
+
+    constructor(private productService: ProductService) {
+        this.filteredProducts = this.products;
+        this.listFilter = 'cart';
+    }
+```
+
+ Next we want to set the items in our products array to pull from our service. First remove the hardcoded products from our product products property above. Next we could add the logic to the constructor, but it isn't good practice to put a lot of code in constructors, so we can instead update our lifecycle hook to handle setting our filtered products, and we probably don't need to hardcode the filter anymore. Remove all the logic from the constructor and then we will get our products and filtered products in the `OnInit` lifecycle hook. Finally 
+
+```typescript
+    constructor(private productService: ProductService) {
+    }
+
+    ngOnInit(): void{
+        this.products = this.productService.getProducts()
+        this.filteredProducts = this.products;
+    }
+```
+
+We set the `products` list to our `getProducts` method in our `productService` service and then set the filtered products to all the products returned from that function call.
+
+## Checklist an Summary
+
+### Creating a Service
+
+Service Class
+
+* clear name
+* Pascal case
+* Append Service to the name
+* Export Keyword
+
+Service Decorator
+
+* Use Injectable
+* Prefix with @; suffix with ()
+
+Import what we need
+
+### Register a service
+
+First figure out where it should be registered. 
+
+* Root component
+  * Set the providedIn property to 'root'
+* Specific Component
+  * in the component add service to the providers array in component decorator
+
+### Dependency Injection
+
+Specify the Service as a dependency
+Use a constructor Parameter
+Service is injected when the component is instantiated
+
+Now we built the product data component so it is ready to return data, next we will find out how to return data from our service using HTTP.
+
+# Retrieving Data using HTTP
