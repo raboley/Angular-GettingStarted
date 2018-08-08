@@ -1895,3 +1895,48 @@ This will allow the productService to be used by that component. Old school angu
 
 ## Injecting the service
 
+Dependency injection in typescript is done in the constructor. If we need to do dependency injection then we need an explicit constructor. Constructors should hold as little code as possible and should not have side effects since it is used in initialization.
+
+To do dependency injection we will add an explicit constructor that accepts a service as a parameter, and then create a private variable to hold the service.
+
+```typescript
+export class ProductListComponent {
+    private _productService;
+    constructor(productService: ProductService){
+        this._productService = productService;
+    }
+}
+```
+
+The injector will inject the service requested in the constructor, and then the service gets captured in the private variable which can then be used in the class to acess the methods and properties of the service. This is such a common pattern that typescript created a shorthand for it.
+
+```typescript
+export class ProductListComponent {
+    constructor(private productService: ProductService)
+}
+```
+
+This becomes a shortcut for declaring the variable, creating a parameter then setting the output of the paramater to the variable. Next we will inject this service into our [product-list.component.ts](./src/app/products/product-list.component.ts). Adding the shorthand for our service injection in the constructor parameters below gives us an instance of the `ProductService` class that can be referenced with `this.productService`.
+
+```typescript
+    products: IProduct[] = [];
+
+    constructor(private productService: ProductService) {
+        this.filteredProducts = this.products;
+        this.listFilter = 'cart';
+    }
+```
+
+ Next we want to set the items in our products array to pull from our service. First remove the hardcoded products from our product products property above. Next we could add the logic to the constructor, but it isn't good practice to put a lot of code in constructors, so we can instead update our lifecycle hook to handle setting our filtered products, and we probably don't need to hardcode the filter anymore. Remove all the logic from the constructor and then we will get our products and filtered products in the `OnInit` lifecycle hook. Finally 
+
+```typescript
+    constructor(private productService: ProductService) {
+    }
+
+    ngOnInit(): void{
+        this.products = this.productService.getProducts()
+        this.filteredProducts = this.products;
+    }
+```
+
+We set the `products` list to our `getProducts` method in our `productService` service and then set the filtered products to all the products returned from that function call.

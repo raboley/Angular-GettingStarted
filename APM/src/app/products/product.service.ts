@@ -12,7 +12,7 @@ export class ProductService {
             {
                 "productId": 1,
                 "productName": "Leaf Rake",
-                "productCode": "GDN-0011",
+                "productCode": "GDN-0012",
                 "releaseDate": "March 19, 2016",
                 "description": "Leaf rake with 48-inch wooden handle.",
                 "price": 19.95,
