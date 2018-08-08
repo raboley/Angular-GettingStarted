@@ -1940,3 +1940,40 @@ This becomes a shortcut for declaring the variable, creating a parameter then se
 ```
 
 We set the `products` list to our `getProducts` method in our `productService` service and then set the filtered products to all the products returned from that function call.
+
+## Checklist an Summary
+
+### Creating a Service
+
+Service Class
+
+* clear name
+* Pascal case
+* Append Service to the name
+* Export Keyword
+
+Service Decorator
+
+* Use Injectable
+* Prefix with @; suffix with ()
+
+Import what we need
+
+### Register a service
+
+First figure out where it should be registered. 
+
+* Root component
+  * Set the providedIn property to 'root'
+* Specific Component
+  * in the component add service to the providers array in component decorator
+
+### Dependency Injection
+
+Specify the Service as a dependency
+Use a constructor Parameter
+Service is injected when the component is instantiated
+
+Now we built the product data component so it is ready to return data, next we will find out how to return data from our service using HTTP.
+
+# Retrieving Data using HTTP
