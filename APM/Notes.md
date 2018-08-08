@@ -1783,3 +1783,91 @@ Registering the service with angular creates a single instance of the service ca
 `Dependency Injection` is a coding pattern where a class recieves the objects it needs (referred to as dependencies) instead of creating them itself. In angular this external source is the angular injector.
 
 ## Building a service
+
+To build a service we do the same basic steps as creating a component.
+
+1. create a class
+1. define metadata with a decorator
+1. import what we need
+
+A sample service could look like this:
+
+```typescript
+import { Injectable } from '@angular/core'
+
+@Injectable()
+export class ProductService{
+
+    getProducts(): IProduct {
+    }
+}
+```
+
+First we create a class then export it so it can be used outside this file. There is a sample method called `getProducts` which currently doesn't do anything but would expect to return something using our `IProduct` interface. We then decorate the class with the `@Injectible` decorator. Finally we import the `@Injectable` decorator from angular core. We will start by creating a new file for our service called [product.service.ts](./src/app/products/product.service.ts) in the products folder since our service will only return product data.
+
+```typescript
+import { Injectable } from "@angular/core";
+import { IProduct } from "./product";
+
+@Injectable()
+
+export class ProductService {
+
+    getProducts(): IProduct[] {
+        return;
+    }
+}
+```
+
+Just like the other classes we are doing the same 3 steps, and then adding a method that returns an array of `IProducts` which we need to import. Unless specified as private or protected any property or method on this class will be accessible by components that inject the service. For now we can hard code in the products we used to have hard coded in the component itself. That will give us a class like this:
+
+```typescript
+import { Injectable } from "@angular/core";
+import { IProduct } from "./product";
+
+@Injectable()
+
+export class ProductService {
+
+    getProducts(): IProduct[] {
+        return [
+            {
+                "productId": 1,
+                "productName": "Leaf Rake",
+                "productCode": "GDN-0011",
+                "releaseDate": "March 19, 2016",
+                "description": "Leaf rake with 48-inch wooden handle.",
+                "price": 19.95,
+                "starRating": 3.2,
+                "imageUrl": "https://openclipart.org/image/300px/svg_to_png/26215/Anonymous_Leaf_Rake.png"
+          },
+          {
+                "productId": 2,
+                "productName": "Garden Cart",
+                "productCode": "GDN-0023",
+                "releaseDate": "March 18, 2016",
+                "description": "15 gallon capacity rolling garden cart",
+                "price": 32.99,
+                "starRating": 4.2,
+                "imageUrl": "https://openclipart.org/image/300px/svg_to_png/58471/garden_cart.png"
+          }
+        ];
+    }
+}
+```
+
+Now that this service should return data, we need to add it to the angular injector.
+
+## Registering the service
+
+There are root injectors, and component injectors that mirror the component tree. Root injector means that it is accessible to all areas of the application. If you register it with the component it is only accessible within the component and it's children, and creates multiple instances of the service. Most the time we want to inject the services into the root injector.
+
+to do this you add some information in the @injectible decorator
+
+```typescript
+@injectable({
+    provdidedIn: 'root'
+})
+```
+
+We can then access this service within many components. Let's add this metadata to our decorator in 
