@@ -1870,4 +1870,28 @@ to do this you add some information in the @injectible decorator
 })
 ```
 
-We can then access this service within many components. Let's add this metadata to our decorator in 
+We can then access this service within many components. Let's add this metadata to our decorator in the [product.service.ts](./src/app/products/product.service.ts).
+
+```typescript
+import { Injectable } from "@angular/core";
+import { IProduct } from "./product";
+
+@Injectable({
+    providedIn: 'root'
+})
+
+export class ProductService {
+```
+
+Now it should be available to all other components. If we wanted it to be available to only specific components then we would add it to the component's decorator. For example if we wanted to ONLY use this in the product component we could add the providers element to that class
+
+```typescript
+@Component({
+    providers: [ProductService]
+})
+```
+
+This will allow the productService to be used by that component. Old school angular would have us use the same providers syntax above, but in a module instead. If you see that it is valid, but recommended to use the providedIn feature instead. Now that it is available, let's see how to use it.
+
+## Injecting the service
+
