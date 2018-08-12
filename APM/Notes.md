@@ -1977,3 +1977,52 @@ Service is injected when the component is instantiated
 Now we built the product data component so it is ready to return data, next we will find out how to return data from our service using HTTP.
 
 # Retrieving Data using HTTP
+
+## Introduction
+
+Most websites retrieve data from a backend server using HTTP requests. In this module we will learn how to use HTTP requests to get data, then format that data as an observable, and subscribe our view to that observable. This new process will replace the hard coded data we have in our service currently.
+
+## Observables and Reactive extensions
+
+Observable collections are basically an array that works asyncronously. That means that it updates while data is added and removed by the system at different points in time. Components or service can subscribe to observables to get notifications about changes and make sure everything is up to date. It uses reactive extensions (RxJS).
+
+Observable operatiors are methods on observables that compose new observables. The operators do not wait for all to be finished and will instead update as data is emitted. examples are map, filter, merge, take, ect... Map operator allow us to transform data. Map takes an arrow function to transform data as it is passed through. for example we could multiply every value that gets passed in by 10 by using map.
+
+```typescript
+map( x => 10 * x)
+```
+
+This goes through all the objects in the observables and multiplies whatever they are by 10. We use these operators by piping them in. That is why they are often called pipable operators. That isn't the same process of piping like in the html, at least not sytactically. An example could look like this:
+
+```typescript
+import { Observable, range } from 'rxjs';
+import {  map, filter } from 'rxjs/operators';
+
+const source$: Observable<number> = range(0,10);
+
+source$.pipe(
+    map( x => x * 3),
+    filter( x => x % 2 ==== 0)
+).subscribe( x => console.log(x));
+```
+
+We import the `observable` and `range` type and function, as well as the `filter` and `map` operators. We then create an `observable` that holds numbers 1 through 10. we name it `source$` because it is common to name observables with a $ at the end so that it is easier to distinguish in the code. Then using the `pipe` method on the observable we pipe in the map and filter commands. `map` will multiply everything by 3 and then `filter` will only return things that have no remainer when divided by two, also known as being even. the `%` operator acts like the divide operator but it will return the remainder instead of the result of the division. Then using the `subscribe` method we subscribe to the `source$`. Observables do not start emitting values until they have a subscriber.
+
+this will log 0, 6, 12, 18, and 24. Since these are all even numbers when piped through our observables.
+
+### promises vs observables
+
+Promises
+
+* provide a single value in the future
+* not lazy
+* not cancelable
+
+Observable
+
+* emits multiple values over time
+* lazy
+* can cancel by unsubscribing
+* supports map, filter, reduce and other operators
+
+### Sending an HTTP request
