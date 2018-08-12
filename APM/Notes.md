@@ -2097,4 +2097,76 @@ export class ProductService {
 
 One thing to note is that a http request normally sends a JSON response, which isn't exactly what we would want to use. Luckly our http command comes with a built in converter that we can use by using generics like we did before. by putting the `<IProduct[]>` in front of get we use the generic parameter. This will make http map our json response to our IProduct interface. After that we should stronly type the return of the getProducts method. One would think we would get back an `array` of type `IProduct`, but we will actually get an `observable`. This is because http calls are asyncronous operations. Next we will add http to our product service.
 
+## Demo: Sending an HTTP request
 
+First thing is to import the HttpClientModule in [app.module.ts](./src/app/app.module.ts) since we will need it to run http calls.
+
+```typescript
+import { HttpClientModule } from '@angular/common/http';
+
+@ngModule({
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule ],
+    declarations: [
+        AppComponent,
+        ProductListComponent,
+        ConvertSpacesToPipes,
+        StarComponent],
+    bootstrap: [ AppComponent ]
+})
+```
+
+After adding the `HttpClientModule` to our imports we can start adding an http call to the [product.service.ts](./src/app/products/product.service.ts).
+
+```typescript
+import { Injectable } from "@angular/core";
+import { IProduct } from "./product";
+import { HttpClient } from '@angular/common/http'
+import { Observable } from 'rxjs'
+
+@Injectable({
+    providedIn: 'root'
+})
+
+export class ProductService {
+
+    private productUrl = 'api/products/product.json'
+
+    constructor(private http: HttpClient) {}
+```
+
+Start by importing the `HttpClient` and `Observable` to our service. Then we need to add a `constructor` to inject the `HttpClient` dependency into. After that we can setup a local variable for the `productUrl` that we will use to get the data from. In this example it will just be a static file in our project so we don't have to setup a web server. One thing that has been done, but would need to be done is to tell angular where that path is supposed to be.
+
+in [angular.json](./angular.json) make sure to set the path for api in the assets section of the json config.
+
+```json
+            "polyfills": "src/polyfills.ts",
+            "tsConfig": "src/tsconfig.app.json",
+            "assets": [
+              "src/favicon.ico",
+              "src/assets",
+              "src/api"
+            ],
+            "styles": [
+              "src/styles.css"
+            ],
+```
+
+Once the path is added to the assets array like above it should work. Make surer there is a [products.json](/src/api/products/products.json) file in your project already, there should be but you never know. To make the service retrieve data from an actual web server you would put a real url in the `productUrl` variable.  Next it is time to delete the hardcoded data, and start adding the implementation already.
+
+```typescript
+export class ProductService {
+
+    private productUrl = 'api/products/product.json'
+
+    constructor(private http: HttpClient) {}
+
+    getProducts(): Observable<IProduct[]> {
+        return this.http.get<IProduct[]>(this.productUrl);
+    }
+}
+```
+
+Adding the http request and changing the return type to Observable is good, but to make it actually work we need to fix an issue we are getting in this file, by adding some exception handling, and then subscribe to this service with our component so it will actually work.
