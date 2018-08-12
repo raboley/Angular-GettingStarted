@@ -2026,3 +2026,75 @@ Observable
 * supports map, filter, reduce and other operators
 
 ### Sending an HTTP request
+
+We will often encapsulate the data accesss layer to a data service that can be used by any component that needs data. Right now our products are hard coded, but we want to use an HTTP request to return the data. The flow for this looks like this.
+
+1. our data service makes a get request to an http service
+1. that http service then uses a get request on the web server
+1. the web server then sends a resonse to our http service
+1. the http service then sends the response to our product data service as an observable
+
+in code this would look like:
+
+```typescript
+import { HttpClient } from '@angular/common/http';
+
+@injectable({
+    providedIn: 'root'
+})
+
+export class ProductService {
+    private productUrl = 'www.myWebService.com/api/products';
+
+    constructor(private http: HttpClient) { }
+
+    getProducts() {
+        return this.http.get(this.productUrl);
+
+    }
+}
+```
+
+This is the product service we made before. in the class we are setting this up to use an http request. we set the productUrl to be some sample url. This is the url the http request will use for it's call. We then inject the HttpClient from angular common http, and impor tit above as well. Since this is a dependency that we are injecting, we need to make sure the injector knows about it.
+
+```typescript
+import { HttpClientModule } from '@angular/common/http';
+
+@ngModule({
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule ],
+    declarations: [
+        AppComponent,
+        ProductListComponent,
+        ConvertSpacesToPipes,
+        StarComponent],
+    bootstrap: [ AppComponent ]
+})
+```
+
+That can be done by going to the app module and adding it to the import statement at the top, and the imports statement in the decorator. Since this is an external module it goes in the imports array, not the declarations array. Declarations are only for components that this module owns, like things that we made. Once this is all setup, we change the `getProducts` method to use the http request.
+
+```typescript
+import { HttpClient } from '@angular/common/http';
+
+@injectable({
+    providedIn: 'root'
+})
+
+export class ProductService {
+    private productUrl = 'www.myWebService.com/api/products';
+
+    constructor(private http: HttpClient) { }
+
+    getProducts(): Observable<IProduct[]> {
+        return this.http.get<IProduct[]>(this.productUrl);
+
+    }
+}
+```
+
+One thing to note is that a http request normally sends a JSON response, which isn't exactly what we would want to use. Luckly our http command comes with a built in converter that we can use by using generics like we did before. by putting the `<IProduct[]>` in front of get we use the generic parameter. This will make http map our json response to our IProduct interface. After that we should stronly type the return of the getProducts method. One would think we would get back an `array` of type `IProduct`, but we will actually get an `observable`. This is because http calls are asyncronous operations. Next we will add http to our product service.
+
+
