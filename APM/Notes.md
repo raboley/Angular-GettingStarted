@@ -2170,3 +2170,46 @@ export class ProductService {
 ```
 
 Adding the http request and changing the return type to Observable is good, but to make it actually work we need to fix an issue we are getting in this file, by adding some exception handling, and then subscribe to this service with our component so it will actually work.
+
+## Exception handling
+
+There are lots of reasons for something bad to happen when making an http request, so it is smart to try and get a head of it. There are two methods that can be piped into the call to watch the output without changing it, and pass back exceptions when they occur.
+
+```typescript
+    getProducts(): Observable<IProduct[]> {
+        return this.http.get<IProduct[]>(this.productUrl).pipe(
+            tap(data => console.log('All: ' + JSON.stringify(data))),
+            catchError(this.handleError)
+        );
+    }
+
+    private handleError(err: HttpErrorResponse) {
+
+    }
+```
+
+The `tap` method taps into the emit stream and will read the stream without modifying it all. The `catchError` will return the exception message if an error occurs. We can then have our `handleError` method do something with that message. Let's add this to our [product.service.ts](./src/app/products/product.service.ts).
+
+Once that is added, then we can implement some error handling.
+
+```typescript
+    private handleError(err: HttpErrorResponse) {
+        let errorMessage = '';
+
+        if (err.error instanceof ErrorEvent) {
+            errorMessage = `An error occurred ${ err.error.message}`;
+        } else {
+            errorMessage = `server returned code ${ err.status }, error is ${ err.message }`;
+        }
+
+        console.error(errorMessage);
+        return throwError(errorMessage);
+    }
+```
+
+The method above does some simple checks to see if the error is an angular error, or if it is an error returned by the server. Then the error message is logged to the console and thrown by the application. We could send this info to a server somewhere in a real application, but this should be fine for this one.
+
+After all that our service is complete, but we can't see it actually work yet. We are still getting the console error, and we still haven't subscribed to the observable. Lets do that next!
+
+## Subscribing to an Observable
+
