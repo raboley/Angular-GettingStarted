@@ -2213,3 +2213,42 @@ After all that our service is complete, but we can't see it actually work yet. W
 
 ## Subscribing to an Observable
 
+Observables are lazy. That means it doesn't start doing anything until it is called. For observables that means it doesn't emit any values until it is subscribed to. This is done with the subscribe method.
+
+Subscribe has 3 arguments:
+
+* nextFn - processes the next emitted value
+* errorFn - error handler function that executes when there is an error
+* completeFn - handled upon an observables completion
+
+The subscribe function returns a subscription.
+
+```typescript
+let sub = x.subscribe.(nextFn, errorFn, completeFn)
+```
+
+the sub above is the subscription, and if we needed to cancel the subscription at any time we could call the unsubscribe method on it.
+
+Now that our product service is returning an observable, any class that needs data can get it by subscribing to our service.
+
+```typescript
+ngOnInit(): void {
+    this.productService.getProducts().subscribe(
+        products => this.products = products,
+        error => this.errorMessage = <any>error
+    );
+}
+```
+
+This line of code will cause our product service to start emitting values since an observable doesn't do anything until there is a subscriber. 
+
+Inside the subscribe function the first function passed in tells our observable what to do with data it emits. In this example it is setting the products list in our product-list component to the products that our service emits. The first parameter is that emitted item.
+
+The second parameter function is returned if the call fails. This line assigns the error the http call passes back to a local errorMessage property.
+
+There is a third function that returns when our observable returns a complete response. This is rarely used with HTTP requests since they close by themselves after completing thier single response.
+
+We also aren't using the return value since we don't assign our method to anything. This is because we don't allow the user to cancel the subscribe request. Now lets try it out in our code.
+
+## Demo: Subscribing to an observable
+
