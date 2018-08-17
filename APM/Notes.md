@@ -367,7 +367,7 @@ The steps are:
 * add a @component decorator
 * import the needed modules
 
-Create the file in the products folder called product-list.component.ts
+Create the file in the products folder called [product-list.component.ts](./src/app/products/product-list.component.ts)
 
 ```typescript
 import { Component } from "@angular/core";
@@ -2252,3 +2252,47 @@ We also aren't using the return value since we don't assign our method to anythi
 
 ## Demo: Subscribing to an observable
 
+Now we will setup our [product-list.component.ts](./src/app/products/product-list.component.ts) to subscribe to our service.
+
+```typescript
+export class ProductListComponent implements OnInit{
+    errorMessage: any;
+    <...>
+    ngOnInit(): void{
+        this.productService.getProducts().subscribe(
+            products => {
+                this.products = products;
+            },
+            error => this.errorMessage = <any>error
+        )
+        this.filteredProducts = this.products;
+    }
+```
+
+First we can create a variable to store our `errorMessage` we want to handle. Then in the `ngOnInit` method we change the assignment of the products to a subscription on our observable. In the `subscribe` method we are first setting products = to the return values that are emitted from the `productService`. Then we return any errors into our `errorMessage` variable. The `<any>` in front of error is a casting method that will cast whatever the error is returned as into the any type so that anything will fit in our `errorMessage` variable.
+
+If we test this out now we will see there are no products on our page! This is because the page references `filtereProducts` which is outisde the subscribe method. Our product service observable is happening asynchronously, so what ends up happening is:
+
+1. we create the obesrvable which doesn't have anything in it yet
+1. then we set the filtered products to products (which is still empty)
+1. then values start getting emitted by our observable, filling the products array, but not the filteredProduct
+
+Now that this is happening asynchronously we have to think about it differently. We need products and filtered products to be in sync, so the only solution is to add the call to set filteredProducts into our subscribe service. We can add this to the first function using curley braces to signify there is more than one function inside.
+
+```typescript
+    ngOnInit(): void{
+        this.productService.getProducts().subscribe(
+            products => {
+                this.products = products;
+                this.filteredProducts = this.products;
+            },
+            error => this.errorMessage = <any>error
+        )
+    }
+```
+
+By simply movig the assignment statement for filteredProducts inside the products function we should see the app work now! That is because now every time an object is emitted it sets the filtered products as well as the products page.
+
+next we will go over checklists.
+
+## Summary and checklists
