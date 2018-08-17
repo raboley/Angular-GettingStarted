@@ -2296,3 +2296,37 @@ By simply movig the assignment statement for filteredProducts inside the product
 next we will go over checklists.
 
 ## Summary and checklists
+
+### Http Checklist: setup
+
+1. Add HttpClientModule to the imports array of on eof the applications angular modules
+
+### Http Checklist: Service
+
+1. import what we need
+1. define a dependency for the http client service
+    1. use a constructor parameter
+1. create a method for each http request
+1. call the desired http method, such as get
+    1. pass in the url
+1. use generics to specify the returned type
+
+### Http Checklist: subscribing
+
+1. call the subscribe method of the returned observable
+1. provide a function to handle emitted items
+    1. normally assigns a property to the returned json object
+1. add an error function to handle errors passed by obserbsble
+
+### Summary
+
+Observables and reactive extensions
+Sending an http request
+exception handling
+subscribing to an observable
+
+Hard coded data is gone!
+
+Next up navigation and routing!
+
+# Navigation and Routing Basics
