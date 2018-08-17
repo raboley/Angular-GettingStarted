@@ -2330,3 +2330,15 @@ Hard coded data is gone!
 Next up navigation and routing!
 
 # Navigation and Routing Basics
+
+## Introduction
+
+How does Routing work?
+Configure Routes
+Tying Routes to Actions
+Placing the Routed components view
+
+We will build the shell for product detail component as well as hook up the welcome component.
+
+## Generating Code and Handling Undefined
+
