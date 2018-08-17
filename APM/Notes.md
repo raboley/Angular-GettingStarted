@@ -2342,3 +2342,162 @@ We will build the shell for product detail component as well as hook up the welc
 
 ## Generating Code and Handling Undefined
 
+We need some more components. Welcome component is provided as part of the starter files.
+
+[welcome.component.ts](./src/app/home/welcome.component.ts)
+
+```typescript
+import { Component } from '@angular/core';
+
+@Component({
+  templateUrl: './welcome.component.html'
+})
+export class WelcomeComponent {
+  public pageTitle = 'Welcome';
+}
+```
+
+[welcome.component.html](./src/app/home/welcome.component.html)
+
+```html
+<div class="card">
+  <div class="card-header">
+    {{pageTitle}}
+  </div>
+  <div class="card-body">
+    <div class="container-fluid">
+      <div class="text-center">
+        <img src="./assets/images/logo.jpg"
+             class="img-responsive center-block"
+             style="max-height:300px;padding-bottom:50px" />
+      </div>
+
+      <div class="text-center">Developed by:</div>
+      <div class="text-center">
+        <h3>Deborah Kurata</h3>
+      </div>
+
+      <div class="text-center">@deborahkurata</div>
+      <div class="text-center">
+        <a href="http://www.bit.ly/DeborahKsBlog">www.bit.ly/DeborahKsBlog</a>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+We need to build the product detail component. That component should show the details as well as a larger picture, but since we are mostly concerned with routing this module we will just build a shell of the component so we can route to it.
+
+We can use the angular cli to automatically create those files.
+
+```bash
+ng g c products/product-detail --flat
+```
+
+ng for angular cli
+g for generate
+c for component then the name of our component
+--flat to not create a new folder for our component
+
+After running that command it will create the files for us, and update our angular module to declare this new component.
+
+Now we can replace the generated html in our [product-detail.component.html](./src/app/products/product-detail.component.html) with some placeholder text.
+
+```html
+<div class='card'>
+    <div class='card-header'>
+        {{pageTitle + ': ' + product.productName}}
+    </div>
+</div>
+```
+
+Here we will show the pageTitle as well as the productName of the product we are showing the details of. We could run into some issues with this code because our productService is running asynchronously. This page could attempt to display before the productName is filled which would then return undefined, which would give us a runtime error. We ensure this error doesn't happen a couple different ways. One way is to use the safe navigation operator.
+
+```html
+product?.productName
+```
+
+this guards against null and undefined values. If the object is null or undefined, it just returns null instead of trying to access that property. This works okay, but is not always the best solution. It doesn't work when we use the `ngModel` two way binding, and it can be quite tedious if we want to display many properties. Another thing we can do instead is use an ngIf to check that the product exists before going further we won't have to worry about this exception. Lets change our [product-detail.component.html](./src/app/products/product-detail.component.html) to use an `*ngIf`
+
+```html
+<div class='card' *ngIf='product'>
+    <div class='card-header'>
+        {{pageTitle + ': ' + product.productName}}
+    </div>
+</div>
+```
+
+Now we can assume that the product will be there by the time we try to access the productName property of the product. Next lets look at the [product-detail.component.ts](./src/app/products/product-detail.component.ts) file.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'pm-product-detail',
+  templateUrl: './product-detail.component.html',
+  styleUrls: ['./product-detail.component.css']
+})
+export class ProductDetailComponent implements OnInit {
+
+  constructor() { }
+
+  ngOnInit() {
+  }
+
+}
+```
+
+First thing to note is that the selector for this got automatically created. This is only needed if we want to nest this view in another component. Since we are going to use routing for it we can delete the selector.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  templateUrl: './product-detail.component.html',
+  styleUrls: ['./product-detail.component.css']
+})
+export class ProductDetailComponent implements OnInit {
+
+  constructor() { }
+
+  ngOnInit() {
+  }
+
+}
+```
+
+in the [app.module.ts](./src/app/app.module.ts) we can see that the angular cli automatically added our component to the import and declare statement for our module. Since we only have one module both welcome and productDetail-Component get declared into the declarations array. Since we used the CLI for the detail component, but not the welcome component, we need to add the welcome component to the declarations array and import.
+
+```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'
+import { AppComponent } from './app.component';
+import { ProductListComponent } from './products/product-list.component';
+import { ConvertToSpacesPipe } from './shared/convert-to-spaces.pipe';
+import { StarComponent } from './shared/star.component';
+import { HttpClientModule } from '@angular/common/http';
+
+import { ProductDetailComponent } from './products/product-detail.component';
+import { WelcomeComponent } from './home/welcome.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductListComponent,
+    ConvertToSpacesPipe,
+    StarComponent,
+    ProductDetailComponent,
+    WelcomeComponent
+  ],
+  imports: [
+    BrowserModule,FormsModule,HttpClientModule
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+
+Now that we have the basic components in place, we can add routing to our application.
+
+## How Routing Works
