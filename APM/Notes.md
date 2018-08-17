@@ -367,7 +367,7 @@ The steps are:
 * add a @component decorator
 * import the needed modules
 
-Create the file in the products folder called product-list.component.ts
+Create the file in the products folder called [product-list.component.ts](./src/app/products/product-list.component.ts)
 
 ```typescript
 import { Component } from "@angular/core";
@@ -1977,3 +1977,356 @@ Service is injected when the component is instantiated
 Now we built the product data component so it is ready to return data, next we will find out how to return data from our service using HTTP.
 
 # Retrieving Data using HTTP
+
+## Introduction
+
+Most websites retrieve data from a backend server using HTTP requests. In this module we will learn how to use HTTP requests to get data, then format that data as an observable, and subscribe our view to that observable. This new process will replace the hard coded data we have in our service currently.
+
+## Observables and Reactive extensions
+
+Observable collections are basically an array that works asyncronously. That means that it updates while data is added and removed by the system at different points in time. Components or service can subscribe to observables to get notifications about changes and make sure everything is up to date. It uses reactive extensions (RxJS).
+
+Observable operatiors are methods on observables that compose new observables. The operators do not wait for all to be finished and will instead update as data is emitted. examples are map, filter, merge, take, ect... Map operator allow us to transform data. Map takes an arrow function to transform data as it is passed through. for example we could multiply every value that gets passed in by 10 by using map.
+
+```typescript
+map( x => 10 * x)
+```
+
+This goes through all the objects in the observables and multiplies whatever they are by 10. We use these operators by piping them in. That is why they are often called pipable operators. That isn't the same process of piping like in the html, at least not sytactically. An example could look like this:
+
+```typescript
+import { Observable, range } from 'rxjs';
+import {  map, filter } from 'rxjs/operators';
+
+const source$: Observable<number> = range(0,10);
+
+source$.pipe(
+    map( x => x * 3),
+    filter( x => x % 2 ==== 0)
+).subscribe( x => console.log(x));
+```
+
+We import the `observable` and `range` type and function, as well as the `filter` and `map` operators. We then create an `observable` that holds numbers 1 through 10. we name it `source$` because it is common to name observables with a $ at the end so that it is easier to distinguish in the code. Then using the `pipe` method on the observable we pipe in the map and filter commands. `map` will multiply everything by 3 and then `filter` will only return things that have no remainer when divided by two, also known as being even. the `%` operator acts like the divide operator but it will return the remainder instead of the result of the division. Then using the `subscribe` method we subscribe to the `source$`. Observables do not start emitting values until they have a subscriber.
+
+this will log 0, 6, 12, 18, and 24. Since these are all even numbers when piped through our observables.
+
+### promises vs observables
+
+Promises
+
+* provide a single value in the future
+* not lazy
+* not cancelable
+
+Observable
+
+* emits multiple values over time
+* lazy
+* can cancel by unsubscribing
+* supports map, filter, reduce and other operators
+
+### Sending an HTTP request
+
+We will often encapsulate the data accesss layer to a data service that can be used by any component that needs data. Right now our products are hard coded, but we want to use an HTTP request to return the data. The flow for this looks like this.
+
+1. our data service makes a get request to an http service
+1. that http service then uses a get request on the web server
+1. the web server then sends a resonse to our http service
+1. the http service then sends the response to our product data service as an observable
+
+in code this would look like:
+
+```typescript
+import { HttpClient } from '@angular/common/http';
+
+@injectable({
+    providedIn: 'root'
+})
+
+export class ProductService {
+    private productUrl = 'www.myWebService.com/api/products';
+
+    constructor(private http: HttpClient) { }
+
+    getProducts() {
+        return this.http.get(this.productUrl);
+
+    }
+}
+```
+
+This is the product service we made before. in the class we are setting this up to use an http request. we set the productUrl to be some sample url. This is the url the http request will use for it's call. We then inject the HttpClient from angular common http, and impor tit above as well. Since this is a dependency that we are injecting, we need to make sure the injector knows about it.
+
+```typescript
+import { HttpClientModule } from '@angular/common/http';
+
+@ngModule({
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule ],
+    declarations: [
+        AppComponent,
+        ProductListComponent,
+        ConvertSpacesToPipes,
+        StarComponent],
+    bootstrap: [ AppComponent ]
+})
+```
+
+That can be done by going to the app module and adding it to the import statement at the top, and the imports statement in the decorator. Since this is an external module it goes in the imports array, not the declarations array. Declarations are only for components that this module owns, like things that we made. Once this is all setup, we change the `getProducts` method to use the http request.
+
+```typescript
+import { HttpClient } from '@angular/common/http';
+
+@injectable({
+    providedIn: 'root'
+})
+
+export class ProductService {
+    private productUrl = 'www.myWebService.com/api/products';
+
+    constructor(private http: HttpClient) { }
+
+    getProducts(): Observable<IProduct[]> {
+        return this.http.get<IProduct[]>(this.productUrl);
+
+    }
+}
+```
+
+One thing to note is that a http request normally sends a JSON response, which isn't exactly what we would want to use. Luckly our http command comes with a built in converter that we can use by using generics like we did before. by putting the `<IProduct[]>` in front of get we use the generic parameter. This will make http map our json response to our IProduct interface. After that we should stronly type the return of the getProducts method. One would think we would get back an `array` of type `IProduct`, but we will actually get an `observable`. This is because http calls are asyncronous operations. Next we will add http to our product service.
+
+## Demo: Sending an HTTP request
+
+First thing is to import the HttpClientModule in [app.module.ts](./src/app/app.module.ts) since we will need it to run http calls.
+
+```typescript
+import { HttpClientModule } from '@angular/common/http';
+
+@ngModule({
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule ],
+    declarations: [
+        AppComponent,
+        ProductListComponent,
+        ConvertSpacesToPipes,
+        StarComponent],
+    bootstrap: [ AppComponent ]
+})
+```
+
+After adding the `HttpClientModule` to our imports we can start adding an http call to the [product.service.ts](./src/app/products/product.service.ts).
+
+```typescript
+import { Injectable } from "@angular/core";
+import { IProduct } from "./product";
+import { HttpClient } from '@angular/common/http'
+import { Observable } from 'rxjs'
+
+@Injectable({
+    providedIn: 'root'
+})
+
+export class ProductService {
+
+    private productUrl = 'api/products/product.json'
+
+    constructor(private http: HttpClient) {}
+```
+
+Start by importing the `HttpClient` and `Observable` to our service. Then we need to add a `constructor` to inject the `HttpClient` dependency into. After that we can setup a local variable for the `productUrl` that we will use to get the data from. In this example it will just be a static file in our project so we don't have to setup a web server. One thing that has been done, but would need to be done is to tell angular where that path is supposed to be.
+
+in [angular.json](./angular.json) make sure to set the path for api in the assets section of the json config.
+
+```json
+            "polyfills": "src/polyfills.ts",
+            "tsConfig": "src/tsconfig.app.json",
+            "assets": [
+              "src/favicon.ico",
+              "src/assets",
+              "src/api"
+            ],
+            "styles": [
+              "src/styles.css"
+            ],
+```
+
+Once the path is added to the assets array like above it should work. Make surer there is a [products.json](/src/api/products/products.json) file in your project already, there should be but you never know. To make the service retrieve data from an actual web server you would put a real url in the `productUrl` variable.  Next it is time to delete the hardcoded data, and start adding the implementation already.
+
+```typescript
+export class ProductService {
+
+    private productUrl = 'api/products/product.json'
+
+    constructor(private http: HttpClient) {}
+
+    getProducts(): Observable<IProduct[]> {
+        return this.http.get<IProduct[]>(this.productUrl);
+    }
+}
+```
+
+Adding the http request and changing the return type to Observable is good, but to make it actually work we need to fix an issue we are getting in this file, by adding some exception handling, and then subscribe to this service with our component so it will actually work.
+
+## Exception handling
+
+There are lots of reasons for something bad to happen when making an http request, so it is smart to try and get a head of it. There are two methods that can be piped into the call to watch the output without changing it, and pass back exceptions when they occur.
+
+```typescript
+    getProducts(): Observable<IProduct[]> {
+        return this.http.get<IProduct[]>(this.productUrl).pipe(
+            tap(data => console.log('All: ' + JSON.stringify(data))),
+            catchError(this.handleError)
+        );
+    }
+
+    private handleError(err: HttpErrorResponse) {
+
+    }
+```
+
+The `tap` method taps into the emit stream and will read the stream without modifying it all. The `catchError` will return the exception message if an error occurs. We can then have our `handleError` method do something with that message. Let's add this to our [product.service.ts](./src/app/products/product.service.ts).
+
+Once that is added, then we can implement some error handling.
+
+```typescript
+    private handleError(err: HttpErrorResponse) {
+        let errorMessage = '';
+
+        if (err.error instanceof ErrorEvent) {
+            errorMessage = `An error occurred ${ err.error.message}`;
+        } else {
+            errorMessage = `server returned code ${ err.status }, error is ${ err.message }`;
+        }
+
+        console.error(errorMessage);
+        return throwError(errorMessage);
+    }
+```
+
+The method above does some simple checks to see if the error is an angular error, or if it is an error returned by the server. Then the error message is logged to the console and thrown by the application. We could send this info to a server somewhere in a real application, but this should be fine for this one.
+
+After all that our service is complete, but we can't see it actually work yet. We are still getting the console error, and we still haven't subscribed to the observable. Lets do that next!
+
+## Subscribing to an Observable
+
+Observables are lazy. That means it doesn't start doing anything until it is called. For observables that means it doesn't emit any values until it is subscribed to. This is done with the subscribe method.
+
+Subscribe has 3 arguments:
+
+* nextFn - processes the next emitted value
+* errorFn - error handler function that executes when there is an error
+* completeFn - handled upon an observables completion
+
+The subscribe function returns a subscription.
+
+```typescript
+let sub = x.subscribe.(nextFn, errorFn, completeFn)
+```
+
+the sub above is the subscription, and if we needed to cancel the subscription at any time we could call the unsubscribe method on it.
+
+Now that our product service is returning an observable, any class that needs data can get it by subscribing to our service.
+
+```typescript
+ngOnInit(): void {
+    this.productService.getProducts().subscribe(
+        products => this.products = products,
+        error => this.errorMessage = <any>error
+    );
+}
+```
+
+This line of code will cause our product service to start emitting values since an observable doesn't do anything until there is a subscriber. 
+
+Inside the subscribe function the first function passed in tells our observable what to do with data it emits. In this example it is setting the products list in our product-list component to the products that our service emits. The first parameter is that emitted item.
+
+The second parameter function is returned if the call fails. This line assigns the error the http call passes back to a local errorMessage property.
+
+There is a third function that returns when our observable returns a complete response. This is rarely used with HTTP requests since they close by themselves after completing thier single response.
+
+We also aren't using the return value since we don't assign our method to anything. This is because we don't allow the user to cancel the subscribe request. Now lets try it out in our code.
+
+## Demo: Subscribing to an observable
+
+Now we will setup our [product-list.component.ts](./src/app/products/product-list.component.ts) to subscribe to our service.
+
+```typescript
+export class ProductListComponent implements OnInit{
+    errorMessage: any;
+    <...>
+    ngOnInit(): void{
+        this.productService.getProducts().subscribe(
+            products => {
+                this.products = products;
+            },
+            error => this.errorMessage = <any>error
+        )
+        this.filteredProducts = this.products;
+    }
+```
+
+First we can create a variable to store our `errorMessage` we want to handle. Then in the `ngOnInit` method we change the assignment of the products to a subscription on our observable. In the `subscribe` method we are first setting products = to the return values that are emitted from the `productService`. Then we return any errors into our `errorMessage` variable. The `<any>` in front of error is a casting method that will cast whatever the error is returned as into the any type so that anything will fit in our `errorMessage` variable.
+
+If we test this out now we will see there are no products on our page! This is because the page references `filtereProducts` which is outisde the subscribe method. Our product service observable is happening asynchronously, so what ends up happening is:
+
+1. we create the obesrvable which doesn't have anything in it yet
+1. then we set the filtered products to products (which is still empty)
+1. then values start getting emitted by our observable, filling the products array, but not the filteredProduct
+
+Now that this is happening asynchronously we have to think about it differently. We need products and filtered products to be in sync, so the only solution is to add the call to set filteredProducts into our subscribe service. We can add this to the first function using curley braces to signify there is more than one function inside.
+
+```typescript
+    ngOnInit(): void{
+        this.productService.getProducts().subscribe(
+            products => {
+                this.products = products;
+                this.filteredProducts = this.products;
+            },
+            error => this.errorMessage = <any>error
+        )
+    }
+```
+
+By simply movig the assignment statement for filteredProducts inside the products function we should see the app work now! That is because now every time an object is emitted it sets the filtered products as well as the products page.
+
+next we will go over checklists.
+
+## Summary and checklists
+
+### Http Checklist: setup
+
+1. Add HttpClientModule to the imports array of on eof the applications angular modules
+
+### Http Checklist: Service
+
+1. import what we need
+1. define a dependency for the http client service
+    1. use a constructor parameter
+1. create a method for each http request
+1. call the desired http method, such as get
+    1. pass in the url
+1. use generics to specify the returned type
+
+### Http Checklist: subscribing
+
+1. call the subscribe method of the returned observable
+1. provide a function to handle emitted items
+    1. normally assigns a property to the returned json object
+1. add an error function to handle errors passed by obserbsble
+
+### Summary
+
+Observables and reactive extensions
+Sending an http request
+exception handling
+subscribing to an observable
+
+Hard coded data is gone!
+
+Next up navigation and routing!
+
+# Navigation and Routing Basics
