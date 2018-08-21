@@ -2501,3 +2501,32 @@ export class AppModule { }
 Now that we have the basic components in place, we can add routing to our application.
 
 ## How Routing Works
+
+Routing is determining how and when each page/component is displayed. We configure buttons, links images or other things to create options/actions that route the user to a page.
+
+1. Configure a route for each component
+1. Define options/actions
+1. Tie a route to each action/option
+1. Activate the route based on user action
+1. Activing a route displays the component's view
+
+We will create buttons at the top of the web page that link to our different pages. So we will have a home button and a product list button. We will tie each menu item to the router menu using a special built in router directive that looks something like this:
+
+```html
+<a routerLink="/products">Product List</a>
+```
+
+With this built in router syntax we don't have to worry about using a hash symbol for local navigation. By default angular uses html 5 style urls. To use those we have to figure out how to configure URL rewriting with our web server. Once that is setup angular looks for a route that matches the path of the router link. For the link above it should find that here:
+
+```typescript
+{ path: 'products', component: ProductListComponent }
+```
+
+The route includes the component to load when the router is activated. Where the route is displayed is specified with the special router directive.
+
+```html
+<router-outlet></router-outlet>
+```
+
+Then the ProductLisit would appear in that location.
+
