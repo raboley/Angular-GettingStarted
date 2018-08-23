@@ -2604,3 +2604,62 @@ Something to note about routes
 Next we will use these routes in our application.
 
 ## Demo: Configuring Routes
+
+First thing we have to do is add a header as our base in our [index.html](./src/index.html) file. Luckily the angular CLI has already done this for us.
+
+```html
+<base href="/">
+```
+
+The href is the starting path we will use, and since our app folder is our base, just using a `/` is fine. Now we can configure our routes. We can do that in our [app.module.ts](./src/app/app.module.ts).
+
+There are three steps that have to happen here for this to work.
+
+1. import the RouterModule from @angular
+1. Add the RouterModule to our Imports array
+1. Add our routes to RouterModule's forRoot method
+
+Once that is done it should look like this.
+
+```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'
+import { HttpClientModule } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
+
+import { AppComponent } from './app.component';
+import { ProductListComponent } from './products/product-list.component';
+import { ConvertToSpacesPipe } from './shared/convert-to-spaces.pipe';
+import { StarComponent } from './shared/star.component';
+import { ProductDetailComponent } from './products/product-detail.component';
+import { WelcomeComponent } from './home/welcome.component';
+
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductListComponent,
+    ConvertToSpacesPipe,
+    StarComponent,
+    ProductDetailComponent,
+    WelcomeComponent
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpClientModule,
+    RouterModule.forRoot([
+      { path: 'products', component: ProductListComponent },
+      { path: 'products/:id', component: ProductDetailComponent },
+      { path: 'welcome', component: WelcomeComponent },
+      { path: '', redirectTo: 'welcome', pathMatch: 'full' },
+      { path: '**', redirectTo: 'welcome', pathMatch: 'full' }
+    ])
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+
+We add in all the routes described in the examples above to the `forRoot` method of RouterModule. We have the normal products component, the route to a specific product, the route to the welcome page, one for a blank route to go to our welcome page, and then since we don't have a 404 page in our simple app we just redirect any unrecognized path to our welcome page. Later we will refactor this to multiple angular modules for seperation of concerns.
