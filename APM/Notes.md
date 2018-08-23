@@ -2530,3 +2530,77 @@ The route includes the component to load when the router is activated. Where the
 
 Then the ProductLisit would appear in that location.
 
+## Configuring Routes
+
+Routing works by using the router service provided by angular. To access this external service we need to include the `RouterModule` in our imports for our [app.module.ts](./src/app/app.module.ts). By importing this module we get access to the two directives mentioned in the previous section, `routerLink` and `router-outlet`. Router module also exposes the routes to be available. We do this by passing the routes to our router module's `forRoot` method. This all should look something like this:
+
+```typescript
+...
+import { RouterModule } from '@angular/router';
+
+@NgModule({
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule,
+        RouterModule.forRoot([], { useHash: true })
+    ],
+    declarations: [
+        ...
+    ],
+    bootstrap: [ AppComponent ]
+})
+
+export class AppModule { }
+```
+
+The RouterModule.forRoot will contain a list of our routers, and if we want to use hash style paths for routing we can include the `{ useHash: true }` to set that to true. Now we can start configuring some routes.
+
+Routes have a couple pieces to them. Below is an example router object.
+
+```typescript
+{ path: 'products', component: ProductListComponent }
+```
+
+The first element is a path. The path is a part of the url that gets passed in. When the route is activated this segment is added to the end of the url. The user can type in or booknmark the resulting url to go right to that component view in the future.
+
+The second thing we specify in most cases in the component. This determines what component's template is loaded in the view. Now we can walk through some example routes.
+
+```typescript
+{ path: 'products', component: ProductListComponent }
+```
+
+This is a standard route with just a url and a component
+
+```typescript
+{ path: 'products/:id', component: ProductDetailComponent }
+```
+
+This path is to navigate to a specific product. The productDetailComponent reads the id after the /: to figure out what product it needs to show. We can define any number of parameters to pass in here separated by `/`s.
+
+```typescript
+{ path: 'welcome', component: WelcomeComponent }
+```
+
+This path takes us to our welcome component!
+
+```typescript
+{ path: '', redirectTo: 'welcome', pathMatch: 'full' }
+```
+
+This one defines a default route, so it redirects to our welcome page. A redirect needs to have a path to match against and a style to match. Since we only want to redirect to the homepage when the path is empty we put `full` as the path match, and `''` as the thing to match.
+
+```typescript
+{ path: '**', component: PageNotFoundComponent }
+```
+
+This last path uses wildcards to match any path not previously described in the other routes. This is useful for displaying a 404 or page not found message, or redirecting to another route.
+
+Something to note about routes
+
+1. There should be no slashes before the path
+1. The order of the routes matters since it choses the first valid route as the winner
+
+Next we will use these routes in our application.
+
+## Demo: Configuring Routes
