@@ -2696,7 +2696,8 @@ If we try to use these links now they won't do anything. So we need to add the r
   <ul class='nav nav-pills'>
       <li><a class='nav-link' [routerLink]="['/welcome']">Home</a></li>
       <li><a class='nav-link' [routerLink]="['/products']">Product List</a></li>
-  </ul>`
+  </ul>
+  </nav>
 })
 ```
 
@@ -2714,3 +2715,37 @@ Next now that we got rid of our component's selector in the template we can also
 Then we have to decide where these routes will get displayed.
 
 ## Placing the views
+
+to place the views we add the `<router-outlet>` tag in the host components template. Let's add the router outlet to our sample application. We will put this in our [app.component.ts](./src/app/app.component.ts).
+
+```typescript
+@Component({
+  selector: 'pm-root',
+  template: `
+  <nav class='navbar navbar-expand navbar-light bg-light'>
+  <a class='navar-brand'>{{pageTitle}}</a>
+  <ul class='nav nav-pills'>
+      <li><a class='nav-link' [routerLink]="['/welcome']">Home</a></li>
+      <li><a class='nav-link' [routerLink]="['/products']">Product List</a></li>
+  </ul>
+  </nav>
+  <div class='container'>
+    <router-outlet></router-outlet>
+  </div>`
+})
+```
+
+After starting the application we can see that our routing works! It will default to our welcome page, and then clicking the links will take us to our products page. Now lets review the chain of events that makes this happen.
+
+1. user navigates to a feature with a routing link `routerLink="/products"` (shorthand for [routerLink]="['/products']")
+1. Router link uses the parameters in the router link array to compose the router link segment
+1. The browsers location url is changed to the application URL and the url segment from the route
+1. The router searches through the list of valid route definitions and picks the first match
+1. Next the route creates an instance of the component tied to that route
+1. That instance is then displayed where the `<router-outlet></router-outlet>` directive is defined
+1. finally the page is displayed
+
+We now have basic routing in our application. Routing is rather intricate as we can see since we had to change many things in multiple files and make sure all the names were the same. Let's finish up with a summary and checklist
+
+## Checklist and Summary
+
