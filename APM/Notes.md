@@ -2663,3 +2663,54 @@ export class AppModule { }
 ```
 
 We add in all the routes described in the examples above to the `forRoot` method of RouterModule. We have the normal products component, the route to a specific product, the route to the welcome page, one for a blank route to go to our welcome page, and then since we don't have a 404 page in our simple app we just redirect any unrecognized path to our welcome page. Later we will refactor this to multiple angular modules for seperation of concerns.
+
+## Tying routes to actions
+
+There are three ways to activate routes.
+
+1. define an action such as a button and link a route to it
+1. manually type in the URL/bookmark
+1. forward or back button
+
+The last two we get for free so it is the first option we will worry about implementing.
+
+The first thing we can do is add some routing menus to our [app.component.ts](./src/app/app.component.ts) Since our product-list component is currently nested in our template, we can remove that and replace it with the routing menu.
+
+```html
+      <nav class='navbar navbar-expand navbar-light bg-light'>
+          <a class='navar-brand'>{{pageTitle}}</a>
+        <ul class='nav nav-pills'>
+            <li><a class='nav-link'>Home</a></li>
+            <li><a class='nav-link'>Product List</a></li>
+        </ul>
+```
+
+If we try to use these links now they won't do anything. So we need to add the router links to the routing menu.
+
+```typescript
+@Component({
+  selector: 'pm-root',
+  template: `
+  <nav class='navbar navbar-expand navbar-light bg-light'>
+  <a class='navar-brand'>{{pageTitle}}</a>
+  <ul class='nav nav-pills'>
+      <li><a class='nav-link' [routerLink]="['/welcome']">Home</a></li>
+      <li><a class='nav-link' [routerLink]="['/products']">Product List</a></li>
+  </ul>`
+})
+```
+
+For the welcome and products page we will add the `routerLink` directive to each of their respective anchor tags. We could use any clickable tag to add these buttons to. The routerlink is enclosed in square brackets, and then our routes are quotes and then an array of router links also enclosed in quotes and including the backslashes.
+
+Next now that we got rid of our component's selector in the template we can also remove it in our [product-list.component.ts](./src/app/products/product-list.component.ts).
+
+```typescript
+@Component({
+    templateUrl: './product-list.component.html',
+    styleUrls: ['./product-list.component.css']
+})
+```
+
+Then we have to decide where these routes will get displayed.
+
+## Placing the views
