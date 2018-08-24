@@ -2330,3 +2330,479 @@ Hard coded data is gone!
 Next up navigation and routing!
 
 # Navigation and Routing Basics
+
+## Introduction
+
+How does Routing work?
+Configure Routes
+Tying Routes to Actions
+Placing the Routed components view
+
+We will build the shell for product detail component as well as hook up the welcome component.
+
+## Generating Code and Handling Undefined
+
+We need some more components. Welcome component is provided as part of the starter files.
+
+[welcome.component.ts](./src/app/home/welcome.component.ts)
+
+```typescript
+import { Component } from '@angular/core';
+
+@Component({
+  templateUrl: './welcome.component.html'
+})
+export class WelcomeComponent {
+  public pageTitle = 'Welcome';
+}
+```
+
+[welcome.component.html](./src/app/home/welcome.component.html)
+
+```html
+<div class="card">
+  <div class="card-header">
+    {{pageTitle}}
+  </div>
+  <div class="card-body">
+    <div class="container-fluid">
+      <div class="text-center">
+        <img src="./assets/images/logo.jpg"
+             class="img-responsive center-block"
+             style="max-height:300px;padding-bottom:50px" />
+      </div>
+
+      <div class="text-center">Developed by:</div>
+      <div class="text-center">
+        <h3>Deborah Kurata</h3>
+      </div>
+
+      <div class="text-center">@deborahkurata</div>
+      <div class="text-center">
+        <a href="http://www.bit.ly/DeborahKsBlog">www.bit.ly/DeborahKsBlog</a>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+We need to build the product detail component. That component should show the details as well as a larger picture, but since we are mostly concerned with routing this module we will just build a shell of the component so we can route to it.
+
+We can use the angular cli to automatically create those files.
+
+```bash
+ng g c products/product-detail --flat
+```
+
+ng for angular cli
+g for generate
+c for component then the name of our component
+--flat to not create a new folder for our component
+
+After running that command it will create the files for us, and update our angular module to declare this new component.
+
+Now we can replace the generated html in our [product-detail.component.html](./src/app/products/product-detail.component.html) with some placeholder text.
+
+```html
+<div class='card'>
+    <div class='card-header'>
+        {{pageTitle + ': ' + product.productName}}
+    </div>
+</div>
+```
+
+Here we will show the pageTitle as well as the productName of the product we are showing the details of. We could run into some issues with this code because our productService is running asynchronously. This page could attempt to display before the productName is filled which would then return undefined, which would give us a runtime error. We ensure this error doesn't happen a couple different ways. One way is to use the safe navigation operator.
+
+```html
+product?.productName
+```
+
+this guards against null and undefined values. If the object is null or undefined, it just returns null instead of trying to access that property. This works okay, but is not always the best solution. It doesn't work when we use the `ngModel` two way binding, and it can be quite tedious if we want to display many properties. Another thing we can do instead is use an ngIf to check that the product exists before going further we won't have to worry about this exception. Lets change our [product-detail.component.html](./src/app/products/product-detail.component.html) to use an `*ngIf`
+
+```html
+<div class='card' *ngIf='product'>
+    <div class='card-header'>
+        {{pageTitle + ': ' + product.productName}}
+    </div>
+</div>
+```
+
+Now we can assume that the product will be there by the time we try to access the productName property of the product. Next lets look at the [product-detail.component.ts](./src/app/products/product-detail.component.ts) file.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'pm-product-detail',
+  templateUrl: './product-detail.component.html',
+  styleUrls: ['./product-detail.component.css']
+})
+export class ProductDetailComponent implements OnInit {
+
+  constructor() { }
+
+  ngOnInit() {
+  }
+
+}
+```
+
+First thing to note is that the selector for this got automatically created. This is only needed if we want to nest this view in another component. Since we are going to use routing for it we can delete the selector.
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  templateUrl: './product-detail.component.html',
+  styleUrls: ['./product-detail.component.css']
+})
+export class ProductDetailComponent implements OnInit {
+
+  constructor() { }
+
+  ngOnInit() {
+  }
+
+}
+```
+
+in the [app.module.ts](./src/app/app.module.ts) we can see that the angular cli automatically added our component to the import and declare statement for our module. Since we only have one module both welcome and productDetail-Component get declared into the declarations array. Since we used the CLI for the detail component, but not the welcome component, we need to add the welcome component to the declarations array and import.
+
+```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'
+import { AppComponent } from './app.component';
+import { ProductListComponent } from './products/product-list.component';
+import { ConvertToSpacesPipe } from './shared/convert-to-spaces.pipe';
+import { StarComponent } from './shared/star.component';
+import { HttpClientModule } from '@angular/common/http';
+
+import { ProductDetailComponent } from './products/product-detail.component';
+import { WelcomeComponent } from './home/welcome.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductListComponent,
+    ConvertToSpacesPipe,
+    StarComponent,
+    ProductDetailComponent,
+    WelcomeComponent
+  ],
+  imports: [
+    BrowserModule,FormsModule,HttpClientModule
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+
+Now that we have the basic components in place, we can add routing to our application.
+
+## How Routing Works
+
+Routing is determining how and when each page/component is displayed. We configure buttons, links images or other things to create options/actions that route the user to a page.
+
+1. Configure a route for each component
+1. Define options/actions
+1. Tie a route to each action/option
+1. Activate the route based on user action
+1. Activing a route displays the component's view
+
+We will create buttons at the top of the web page that link to our different pages. So we will have a home button and a product list button. We will tie each menu item to the router menu using a special built in router directive that looks something like this:
+
+```html
+<a routerLink="/products">Product List</a>
+```
+
+With this built in router syntax we don't have to worry about using a hash symbol for local navigation. By default angular uses html 5 style urls. To use those we have to figure out how to configure URL rewriting with our web server. Once that is setup angular looks for a route that matches the path of the router link. For the link above it should find that here:
+
+```typescript
+{ path: 'products', component: ProductListComponent }
+```
+
+The route includes the component to load when the router is activated. Where the route is displayed is specified with the special router directive.
+
+```html
+<router-outlet></router-outlet>
+```
+
+Then the ProductLisit would appear in that location.
+
+## Configuring Routes
+
+Routing works by using the router service provided by angular. To access this external service we need to include the `RouterModule` in our imports for our [app.module.ts](./src/app/app.module.ts). By importing this module we get access to the two directives mentioned in the previous section, `routerLink` and `router-outlet`. Router module also exposes the routes to be available. We do this by passing the routes to our router module's `forRoot` method. This all should look something like this:
+
+```typescript
+...
+import { RouterModule } from '@angular/router';
+
+@NgModule({
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule,
+        RouterModule.forRoot([], { useHash: true })
+    ],
+    declarations: [
+        ...
+    ],
+    bootstrap: [ AppComponent ]
+})
+
+export class AppModule { }
+```
+
+The RouterModule.forRoot will contain a list of our routers, and if we want to use hash style paths for routing we can include the `{ useHash: true }` to set that to true. Now we can start configuring some routes.
+
+Routes have a couple pieces to them. Below is an example router object.
+
+```typescript
+{ path: 'products', component: ProductListComponent }
+```
+
+The first element is a path. The path is a part of the url that gets passed in. When the route is activated this segment is added to the end of the url. The user can type in or booknmark the resulting url to go right to that component view in the future.
+
+The second thing we specify in most cases in the component. This determines what component's template is loaded in the view. Now we can walk through some example routes.
+
+```typescript
+{ path: 'products', component: ProductListComponent }
+```
+
+This is a standard route with just a url and a component
+
+```typescript
+{ path: 'products/:id', component: ProductDetailComponent }
+```
+
+This path is to navigate to a specific product. The productDetailComponent reads the id after the /: to figure out what product it needs to show. We can define any number of parameters to pass in here separated by `/`s.
+
+```typescript
+{ path: 'welcome', component: WelcomeComponent }
+```
+
+This path takes us to our welcome component!
+
+```typescript
+{ path: '', redirectTo: 'welcome', pathMatch: 'full' }
+```
+
+This one defines a default route, so it redirects to our welcome page. A redirect needs to have a path to match against and a style to match. Since we only want to redirect to the homepage when the path is empty we put `full` as the path match, and `''` as the thing to match.
+
+```typescript
+{ path: '**', component: PageNotFoundComponent }
+```
+
+This last path uses wildcards to match any path not previously described in the other routes. This is useful for displaying a 404 or page not found message, or redirecting to another route.
+
+Something to note about routes
+
+1. There should be no slashes before the path
+1. The order of the routes matters since it choses the first valid route as the winner
+
+Next we will use these routes in our application.
+
+## Demo: Configuring Routes
+
+First thing we have to do is add a header as our base in our [index.html](./src/index.html) file. Luckily the angular CLI has already done this for us.
+
+```html
+<base href="/">
+```
+
+The href is the starting path we will use, and since our app folder is our base, just using a `/` is fine. Now we can configure our routes. We can do that in our [app.module.ts](./src/app/app.module.ts).
+
+There are three steps that have to happen here for this to work.
+
+1. import the RouterModule from @angular
+1. Add the RouterModule to our Imports array
+1. Add our routes to RouterModule's forRoot method
+
+Once that is done it should look like this.
+
+```typescript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'
+import { HttpClientModule } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
+
+import { AppComponent } from './app.component';
+import { ProductListComponent } from './products/product-list.component';
+import { ConvertToSpacesPipe } from './shared/convert-to-spaces.pipe';
+import { StarComponent } from './shared/star.component';
+import { ProductDetailComponent } from './products/product-detail.component';
+import { WelcomeComponent } from './home/welcome.component';
+
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductListComponent,
+    ConvertToSpacesPipe,
+    StarComponent,
+    ProductDetailComponent,
+    WelcomeComponent
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpClientModule,
+    RouterModule.forRoot([
+      { path: 'products', component: ProductListComponent },
+      { path: 'products/:id', component: ProductDetailComponent },
+      { path: 'welcome', component: WelcomeComponent },
+      { path: '', redirectTo: 'welcome', pathMatch: 'full' },
+      { path: '**', redirectTo: 'welcome', pathMatch: 'full' }
+    ])
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+
+We add in all the routes described in the examples above to the `forRoot` method of RouterModule. We have the normal products component, the route to a specific product, the route to the welcome page, one for a blank route to go to our welcome page, and then since we don't have a 404 page in our simple app we just redirect any unrecognized path to our welcome page. Later we will refactor this to multiple angular modules for seperation of concerns.
+
+## Tying routes to actions
+
+There are three ways to activate routes.
+
+1. define an action such as a button and link a route to it
+1. manually type in the URL/bookmark
+1. forward or back button
+
+The last two we get for free so it is the first option we will worry about implementing.
+
+The first thing we can do is add some routing menus to our [app.component.ts](./src/app/app.component.ts) Since our product-list component is currently nested in our template, we can remove that and replace it with the routing menu.
+
+```html
+      <nav class='navbar navbar-expand navbar-light bg-light'>
+          <a class='navar-brand'>{{pageTitle}}</a>
+        <ul class='nav nav-pills'>
+            <li><a class='nav-link'>Home</a></li>
+            <li><a class='nav-link'>Product List</a></li>
+        </ul>
+```
+
+If we try to use these links now they won't do anything. So we need to add the router links to the routing menu.
+
+```typescript
+@Component({
+  selector: 'pm-root',
+  template: `
+  <nav class='navbar navbar-expand navbar-light bg-light'>
+  <a class='navar-brand'>{{pageTitle}}</a>
+  <ul class='nav nav-pills'>
+      <li><a class='nav-link' [routerLink]="['/welcome']">Home</a></li>
+      <li><a class='nav-link' [routerLink]="['/products']">Product List</a></li>
+  </ul>
+  </nav>
+})
+```
+
+For the welcome and products page we will add the `routerLink` directive to each of their respective anchor tags. We could use any clickable tag to add these buttons to. The routerlink is enclosed in square brackets, and then our routes are quotes and then an array of router links also enclosed in quotes and including the backslashes.
+
+Next now that we got rid of our component's selector in the template we can also remove it in our [product-list.component.ts](./src/app/products/product-list.component.ts).
+
+```typescript
+@Component({
+    templateUrl: './product-list.component.html',
+    styleUrls: ['./product-list.component.css']
+})
+```
+
+Then we have to decide where these routes will get displayed.
+
+## Placing the views
+
+to place the views we add the `<router-outlet>` tag in the host components template. Let's add the router outlet to our sample application. We will put this in our [app.component.ts](./src/app/app.component.ts).
+
+```typescript
+@Component({
+  selector: 'pm-root',
+  template: `
+  <nav class='navbar navbar-expand navbar-light bg-light'>
+  <a class='navar-brand'>{{pageTitle}}</a>
+  <ul class='nav nav-pills'>
+      <li><a class='nav-link' [routerLink]="['/welcome']">Home</a></li>
+      <li><a class='nav-link' [routerLink]="['/products']">Product List</a></li>
+  </ul>
+  </nav>
+  <div class='container'>
+    <router-outlet></router-outlet>
+  </div>`
+})
+```
+
+After starting the application we can see that our routing works! It will default to our welcome page, and then clicking the links will take us to our products page. Now lets review the chain of events that makes this happen.
+
+1. user navigates to a feature with a routing link `routerLink="/products"` (shorthand for [routerLink]="['/products']")
+1. Router link uses the parameters in the router link array to compose the router link segment
+1. The browsers location url is changed to the application URL and the url segment from the route
+1. The router searches through the list of valid route definitions and picks the first match
+1. Next the route creates an instance of the component tied to that route
+1. That instance is then displayed where the `<router-outlet></router-outlet>` directive is defined
+1. finally the page is displayed
+
+We now have basic routing in our application. Routing is rather intricate as we can see since we had to change many things in multiple files and make sure all the names were the same. Let's finish up with a summary and checklist
+
+## Checklist and Summary
+
+Nest-able components
+
+* define a selector
+* nest in another component
+
+routed components
+
+* no selector
+* configure routes
+* tie routes to actions
+
+Doing routing
+
+1. configure routes
+1. tie routes to view
+1. place the view
+
+configure the routes
+
+1. define the base element
+1. add routermodule
+    1. add each route (routerModule.forRoot)
+    1. order matters
+1. path: url segment for the route
+    1. no leading slash
+    1. " for default route
+    1. '**' for wildcard route
+
+component
+
+    * reference to the component itself, not a string name or the component itself. (no quotes)
+
+Tying routes to actions
+
+1. add the routerlink directive as an attribute
+    * clickable element
+    * enclose in square brackets
+1. Bind to a link parameters array
+    * first eleemnt is the path
+    * all other elements are route parameters
+
+placing a view
+
+1. Add the routerOutlet directive
+    * identifies where to display the routed component's view
+    * specified in the hosts component template
+
+Summary
+
+How does Routing work?
+Configuring Routes
+Tying routes to actions
+Placing the views
+
+Next we will add routing to our detail components.
+
+# Navigation and Routing Addtional techniques
