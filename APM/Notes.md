@@ -2749,3 +2749,60 @@ We now have basic routing in our application. Routing is rather intricate as we 
 
 ## Checklist and Summary
 
+Nest-able components
+
+* define a selector
+* nest in another component
+
+routed components
+
+* no selector
+* configure routes
+* tie routes to actions
+
+Doing routing
+
+1. configure routes
+1. tie routes to view
+1. place the view
+
+configure the routes
+
+1. define the base element
+1. add routermodule
+    1. add each route (routerModule.forRoot)
+    1. order matters
+1. path: url segment for the route
+    1. no leading slash
+    1. " for default route
+    1. '**' for wildcard route
+
+component
+
+    * reference to the component itself, not a string name or the component itself. (no quotes)
+
+Tying routes to actions
+
+1. add the routerlink directive as an attribute
+    * clickable element
+    * enclose in square brackets
+1. Bind to a link parameters array
+    * first eleemnt is the path
+    * all other elements are route parameters
+
+placing a view
+
+1. Add the routerOutlet directive
+    * identifies where to display the routed component's view
+    * specified in the hosts component template
+
+Summary
+
+How does Routing work?
+Configuring Routes
+Tying routes to actions
+Placing the views
+
+Next we will add routing to our detail components.
+
+# Navigation and Routing Addtional techniques
