@@ -2806,3 +2806,13 @@ Placing the views
 Next we will add routing to our detail components.
 
 # Navigation and Routing Addtional techniques
+
+This module is about more ways to use routing, examples include
+
+* Passing parameters to a route
+* Activating a route with code
+* Protect a route with guards
+* ask to save changes before leaving a route
+
+Route to a component that requires parameters.
+
