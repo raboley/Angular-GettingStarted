@@ -2816,3 +2816,24 @@ This module is about more ways to use routing, examples include
 
 Route to a component that requires parameters.
 
+## Passing Parameters to a route
+
+The first thing we need to do to pass parameters to a route is to configure the route to accept parameters like we have already done in the [app.module.ts](./src/app/app.module.ts):
+
+```typescript
+    { path: 'products/:id', component: ProductDetailComponent },
+```
+
+We define this parameter using a slash, colon then placeholder for what the value should be referenced as. If we needed to have two parameters we would add another slash colon and placeholder `/:id/:description` to allow for the second parameter. Since we already have the route configured we just need to figure out how we want the user to activate the route.
+
+For this route we know we have a table in our product-list component that has a row for every product in the array. We can then add the routerlink to the product name in our product table in [product-list.component.html](./src/app/products/product-list.component.html) by wrapping this in an anchor tag and adding a routerLink.
+
+```html
+    <td>
+        <a [routerLink]="['/products', product.id]">
+            {{ product.productName }}
+        </a>
+    </td>
+```
+
+We pass an array to the router link with the first element being the string value of the route name, and the second being the value for the route parameter we want to pass in to the parameter.
